@@ -1,0 +1,8 @@
+# Editor
+.vscode/
+
+# Task brief (kept locally only)
+TASK.md
+
+# OS
+.DS_Store
