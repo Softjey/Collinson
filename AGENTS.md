@@ -10,5 +10,3 @@ Backend service (Node.js + GraphQL) that ranks the next 7 days for skiing, surfi
 
 - Everything in the repo (code, docs, comments, commits) is written in English.
 - Commit messages follow Conventional Commits.
-- Record non-trivial decisions, assumptions and open questions in [DECISIONS.md](DECISIONS.md).
-- Keep the scope focused; no front end.
