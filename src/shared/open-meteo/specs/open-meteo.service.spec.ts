@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import { OpenMeteoService } from './open-meteo.service.js';
+import { OpenMeteoService } from '.././open-meteo.service.js';
 
 function createService() {
   const clients = {
