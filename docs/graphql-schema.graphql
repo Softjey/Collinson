@@ -1,0 +1,152 @@
+"""A calendar date without a time, `YYYY-MM-DD`."""
+scalar Date
+
+"""An instant in time, ISO 8601, in UTC."""
+scalar DateTime
+
+enum Activity {
+  SKIING
+  SURFING
+  OUTDOOR_SIGHTSEEING
+  INDOOR_SIGHTSEEING
+}
+
+"""
+Quality of a day for an activity on a fixed 8-step scale. The matching score ranges are
+UNSUITABLE 0-0.09, POOR 0.10-0.39, MARGINAL 0.40-0.49, ACCEPTABLE 0.50-0.59,
+GOOD 0.60-0.69, VERY_GOOD 0.70-0.79, EXCELLENT 0.80-0.89, IDEAL 0.90-1.00.
+"""
+enum ScoreCategory {
+  UNSUITABLE
+  POOR
+  MARGINAL
+  ACCEPTABLE
+  GOOD
+  VERY_GOOD
+  EXCELLENT
+  IDEAL
+}
+
+"""Why an activity cannot be scored on a given day."""
+enum UnscoredReason {
+  NO_SEA
+  NO_SNOW
+}
+
+"""Kind of data a result is based on."""
+enum DataKind {
+  WEATHER
+  WAVES
+}
+
+"""Why no data is available for an activity."""
+enum DataUnavailableCause {
+  TEMPORARILY_UNAVAILABLE
+  RATE_LIMITED
+}
+
+type Query {
+  """Finds places by name. Returns an empty list when nothing matches."""
+  searchLocations(
+    name: String!
+    """1 to 100."""
+    count: Int! = 10
+    """ISO 3166-1 alpha-2 code."""
+    countryCode: String
+    language: String! = "en"
+  ): [Place!]!
+
+  """
+  Scores each requested activity for each day in the range.
+  Rejected when `fromDate` is after `toDate`, when `fromDate` is before today in the time zone
+  of the location, or when `toDate` is more than 7 days after today there.
+  """
+  activityScores(input: ActivityScoresInput!): ActivityScores!
+}
+
+type Place {
+  id: ID!
+  name: String!
+  country: String
+  countryCode: String
+  """First-level administrative region."""
+  admin1: String
+  latitude: Float!
+  longitude: Float!
+  """Metres above sea level."""
+  elevation: Float
+  """IANA time zone name."""
+  timezone: String
+  population: Int
+}
+
+input ActivityScoresInput {
+  """-90 to 90."""
+  latitude: Float!
+  """-180 to 180."""
+  longitude: Float!
+  fromDate: Date!
+  toDate: Date!
+  """All four activities by default."""
+  activities: [Activity!]! = [SKIING, SURFING, OUTDOOR_SIGHTSEEING, INDOOR_SIGHTSEEING]
+}
+
+type ActivityScores {
+  location: ScoredLocation!
+  """One entry per requested activity. A failed activity does not fail the others."""
+  activities: [ActivityScoresResult!]!
+}
+
+"""The point the scores are for. It may differ slightly from the requested coordinates."""
+type ScoredLocation {
+  latitude: Float!
+  longitude: Float!
+  """Metres above sea level."""
+  elevation: Float!
+  """IANA time zone name. Days are calendar days in this zone."""
+  timezone: String!
+}
+
+union ActivityScoresResult = ActivityDayScores | ActivityDataTooOld | ActivityDataUnavailable
+
+type ActivityDayScores {
+  activity: Activity!
+  """One entry per day in the requested range, in date order."""
+  days: [DayResult!]!
+  """When the data behind these scores was last updated."""
+  freshness: [DataFreshness!]!
+}
+
+union DayResult = ScoredDay | UnscoredDay
+
+type ScoredDay {
+  date: Date!
+  """0 to 1, higher is better."""
+  score: Float!
+  """1 to 8, matching `category`."""
+  categoryIndex: Int!
+  category: ScoreCategory!
+}
+
+type UnscoredDay {
+  date: Date!
+  reason: UnscoredReason!
+}
+
+type DataFreshness {
+  kind: DataKind!
+  updatedAt: DateTime!
+  """True when newer data could not be obtained and the previous data was used."""
+  stale: Boolean!
+}
+
+type ActivityDataTooOld {
+  activity: Activity!
+  """The last time data for this activity was updated."""
+  lastUpdatedAt: DateTime!
+}
+
+type ActivityDataUnavailable {
+  activity: Activity!
+  cause: DataUnavailableCause!
+}

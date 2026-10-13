@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Location {
+  id                Int                @id @default(autoincrement())
+  // Degrees x 100, so the unique key is exact.
+  latE2             Int
+  lonE2             Int
+  elevationM        Float?             @db.Real
+  timezone          String?
+  createdAt         DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime           @default(now()) @updatedAt @db.Timestamptz(3)
+  forecastSnapshots ForecastSnapshot[]
+  marineSnapshots   MarineSnapshot[]
+
+  @@unique([latE2, lonE2])
+}
+
+model ForecastSnapshot {
+  id               Int            @id @default(autoincrement())
+  locationId       Int
+  fetchedAt        DateTime       @default(now()) @db.Timestamptz(3)
+  parserVersion    Int
+  apiLatitude      Float          @db.Real
+  apiLongitude     Float          @db.Real
+  elevationM       Float?         @db.Real
+  utcOffsetSeconds Int
+  createdAt        DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime       @default(now()) @updatedAt @db.Timestamptz(3)
+  location         Location       @relation(fields: [locationId], references: [id])
+  hours            ForecastHour[]
+
+  @@index([locationId, fetchedAt(sort: Desc), id(sort: Desc)])
+}
+
+model ForecastHour {
+  snapshotId         Int
+  timeUtc            DateTime         @db.Timestamptz(3)
+  temperature2m      Float?           @db.Real
+  relativeHumidity2m Float?           @db.Real
+  precipitation      Float?           @db.Real
+  rain               Float?           @db.Real
+  snowfall           Float?           @db.Real
+  snowDepth          Float?           @db.Real
+  cloudCover         Float?           @db.Real
+  windSpeed10m       Float?           @db.Real
+  windGusts10m       Float?           @db.Real
+  weatherCode        Int?             @db.SmallInt
+  snapshot           ForecastSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@id([snapshotId, timeUtc])
+}
+
+model MarineSnapshot {
+  id            Int          @id @default(autoincrement())
+  locationId    Int
+  fetchedAt     DateTime     @default(now()) @db.Timestamptz(3)
+  parserVersion Int
+  // False for inland points: the snapshot is still stored (without hours) so the Marine API is not called again.
+  hasSea        Boolean
+  apiLatitude   Float?       @db.Real
+  apiLongitude  Float?       @db.Real
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime     @default(now()) @updatedAt @db.Timestamptz(3)
+  location      Location     @relation(fields: [locationId], references: [id])
+  hours         MarineHour[]
+
+  @@index([locationId, fetchedAt(sort: Desc), id(sort: Desc)])
+}
+
+model MarineHour {
+  snapshotId      Int
+  timeUtc         DateTime       @db.Timestamptz(3)
+  waveHeight      Float?         @db.Real
+  wavePeriod      Float?         @db.Real
+  waveDirection   Int?           @db.SmallInt
+  swellWaveHeight Float?         @db.Real
+  swellWavePeriod Float?         @db.Real
+  snapshot        MarineSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@id([snapshotId, timeUtc])
+}
+
+model Place {
+  // GeoNames id from the geocoder.
+  id          Int              @id
+  name        String
+  country     String?
+  countryCode String?          @db.Char(2)
+  admin1      String?
+  latitude    Float
+  longitude   Float
+  elevationM  Float?           @db.Real
+  timezone    String?
+  population  Int?
+  createdAt   DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime         @default(now()) @updatedAt @db.Timestamptz(3)
+  hits        PlaceSearchHit[]
+}
+
+model PlaceSearch {
+  id          Int              @id @default(autoincrement())
+  query       String
+  language    String
+  // Empty string when no country filter was given.
+  countryCode String           @default("")
+  resultCount Int
+  fetchedAt   DateTime         @default(now()) @db.Timestamptz(3)
+  createdAt   DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime         @default(now()) @updatedAt @db.Timestamptz(3)
+  hits        PlaceSearchHit[]
+
+  @@unique([query, language, countryCode, resultCount])
+}
+
+model PlaceSearchHit {
+  searchId  Int
+  position  Int         @db.SmallInt
+  placeId   Int
+  createdAt DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime    @default(now()) @updatedAt @db.Timestamptz(3)
+  search    PlaceSearch @relation(fields: [searchId], references: [id], onDelete: Cascade)
+  place     Place       @relation(fields: [placeId], references: [id])
+
+  @@id([searchId, position])
+}
