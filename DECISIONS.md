@@ -24,11 +24,14 @@ Formulas, tables, data and the full design are in [docs/technical-spec.md](docs/
 - **Based on published research and real Open-Meteo data**, not invented rules: Skiing Utility Index (skiing),
   HCI:Urban (outdoor). Surfing thresholds come from surf forecasting practice. Indoor is our own model:
   `0.5 + 0.5 * (1 - outdoor)`.
+- **Thermal comfort uses humidex with mean humidity**, as in the authors' 2020 update of HCI, not effective
+  temperature. Why: the effective temperature formula is not printed in the original paper, and it rates 42 C dry
+  heat as 6 out of 10 while humidex rates it 0.
 - **Surfing assumes a general or intermediate surfer**, with no skill parameter.
 - **Additions made after validating on historical days:** outdoor is capped at 0.5 from 6 mm of daily
   precipitation and at 0.2 from 60 km/h maximum wind or 25 mm; skiing is multiplied by
-  `min(1, snow depth / 0.3 m)` and by `(1 - rain / 3 mm)`. Why: plain HCI scored Typhoon Saola at 0.47 and Storm
-  Eunice at 0.63, and skiing scored early season days as high as mid-winter ones.
+  `min(1, snow depth / 0.3 m)` and by `(1 - rain / 3 mm)`. Why: plain HCI scored Storm Eunice in London at 0.63
+  even though attractions were closed, and skiing scored early season days as high as mid-winter ones.
 - **Known limits, refinement postponed to the end:** no wind direction for surfing, skiing in the off-season is
   not always unscored, caps were derived from the same events they were checked on.
 
@@ -53,7 +56,7 @@ Formulas, tables, data and the full design are in [docs/technical-spec.md](docs/
 
 - **Stale data is served with the time it was actually fetched**, per source, and the client decides what to show.
 - **Data older than 48 hours is not served.** One limit for all sources. Why: in the measurements the score
-  error roughly doubles between 24 and 48 hours for the nearest days.
+  error for skiing roughly doubles between 24 and 48 hours on the nearest days.
 - **Failures are per activity.** If waves fail only surfing fails.
 - **No limit counter.** If Open-Meteo fails or limits requests and there is no stored data, the activity gets an
   error. Production is assumed to use a paid plan.

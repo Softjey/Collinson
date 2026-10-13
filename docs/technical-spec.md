@@ -225,15 +225,17 @@ Difference between a score from a cached run and a score from a fresh run for th
 
 | Activity | Target | 6 h | 12 h | 24 h | 48 h | 72 h |
 |---|---|---|---|---|---|---|
-| Outdoor | tomorrow | 0.031 / 4% | 0.040 / 6% | 0.048 / 6% | 0.055 / 7% | 0.072 / 12% |
-| Outdoor | +3 days | 0.040 / 4% | 0.044 / 5% | 0.058 / 9% | 0.076 / 14% | 0.087 / 17% |
-| Outdoor | +7 days | 0.076 / 12% | 0.087 / 19% | 0.095 / 21% | 0.109 / 24% | not measured |
+| Outdoor | tomorrow | 0.029 / 3% | 0.037 / 3% | 0.046 / 3% | 0.051 / 4% | 0.072 / 10% |
+| Outdoor | +3 days | 0.035 / 0% | 0.041 / 2% | 0.053 / 4% | 0.069 / 8% | 0.087 / 14% |
+| Outdoor | +7 days | 0.076 / 10% | 0.090 / 17% | 0.103 / 21% | 0.116 / 25% | not measured |
 | Skiing | tomorrow | 0.027 / 2% | 0.031 / 2% | 0.042 / 3% | 0.074 / 8% | 0.077 / 6% |
 | Skiing | +3 days | 0.051 / 5% | 0.051 / 5% | 0.058 / 6% | 0.117 / 12% | 0.144 / 17% |
 | Skiing | +7 days | 0.107 / 7% | 0.143 / 8% | 0.149 / 9% | 0.194 / 17% | not measured |
 
-Reading: for the nearest days the change roughly doubles between 24 and 48 hours. Far days are noisy even with
-a fresh cache. A 24 hour limit would have been tighter; 48 hours was chosen as a single limit for all sources.
+Reading: for skiing the change on the nearest days roughly doubles between 24 and 48 hours (0.058 to 0.117 at +3
+days). For outdoor it grows more gradually and stays under half a class width up to 48 hours, then rises at 72
+hours. Far days are noisy even with a fresh cache. A 24 hour limit would have been tighter; 48 hours was chosen as
+a single limit for all sources.
 Setup: 6 locations for outdoor and 3 southern-hemisphere ski locations, July 2026, one model, 80 to 500 cases per
 cell. Waves could not be measured this way (no single-run archive); a 24 hour old wave cache differed by about
 0.07 m for tomorrow and a 48 hour old one by about 0.11 m.
@@ -315,15 +317,17 @@ used, because the API does not know the orientation of the coast.
 ### 8.4 Outdoor sightseeing
 
 Holiday Climate Index: Urban (HCI:Urban), Scott, Rutty, Amelung and Tang, 2016, Atmosphere 7(6):80. The rating
-tables were checked against the original paper.
+tables were checked against the original paper. The thermal comfort variable follows the later update by the
+same authors (Rutty et al., 2020, Atmosphere 11(4):412), which replaced effective temperature with humidex.
 
 `HCI = 4 * TC + 2 * A + 3 * P + W`, then `score = clamp(HCI / 100)`. Each rating is 0 to 10, precipitation and
 wind can be negative.
 
-Thermal comfort rating, from effective temperature `ET = T - 0.4 (T - 10)(1 - RH / 100)` with `T = tMax` and
-`RH = rhMean`:
+Thermal comfort rating, from the Canadian humidex of `T = tMax` (C) and `RH = rhMean` (%):
 
-| ET (C) | Rating | ET (C) | Rating |
+`humidex = T + 5/9 * (6.112 * 10^(7.5 T / (237.7 + T)) * RH / 100 - 10)`
+
+| Humidex (C) | Rating | Humidex (C) | Rating |
 |---|---|---|---|
 | below -6 | 1 | 26 to 26.99 | 9 |
 | -5.99 to -0.01 | 2 | 27 to 28.99 | 8 |
@@ -350,8 +354,12 @@ Two caps are our additions, applied after the index (both added after validation
 - if `precip >= 6` then `score = min(score, 0.5)`;
 - if `windMax >= 60` or `precip >= 25` then `score = min(score, 0.2)`.
 
-Verify: the effective temperature formula is not printed in the paper. The formula above is the commonly cited
-one and was not confirmed against the original source.
+Why humidex and not effective temperature: Scott 2016 used effective temperature but does not print a formula
+(Mieczkowski's TCI reads it from an ASHRAE chart), so it cannot be reproduced exactly. Rutty 2020 moved
+HCI:Urban and HCI:Beach to humidex with the same rating bands (Table 3 of that paper), and the humidex formula is
+printed in Atmosphere 11(9):911, eq. 1. Humidex also handles dry heat correctly: at 42 C and 25% humidity
+effective temperature gives a rating of 6, humidex gives 0. In humid tropics humidex rates most days 0
+(Singapore at 32.8 C and 86% humidity is 50.9, rating 0), which is the known behaviour of that index.
 
 ### 8.5 Indoor sightseeing
 
@@ -386,13 +394,18 @@ the score function over daily features.
 The formulas were checked against historical data (Open-Meteo archive and marine history), with events whose
 outcome is documented. This is a sanity check, not a statistical validation.
 
-Dated events (before the two caps were added, then after):
+Dated events, with the humidex thermal comfort used by the final scoring (outdoor before and after the two caps):
 
-| Place and date | What happened | Observed daily values | Outdoor before | Outdoor after | Indoor after |
+| Place and date | What happened | Observed daily values | Outdoor before caps | Outdoor after caps | Indoor after |
 |---|---|---|---|---|---|
-| Hong Kong 2023-09-01 | Typhoon Saola, signal 10 | tMax 25.4, precip 61.3, wind mean 30.8 / max 63.5, cloud 100 | 0.47 | 0.20 | 0.90 |
-| Hong Kong 2023-09-02 | signal 10 still in force | tMax 27.4, precip 68.2, wind 30.4 / 51.1, cloud 87 | 0.45 | 0.20 | 0.90 |
+| Hong Kong 2023-09-01 | Typhoon Saola, signal 10 | tMax 25.4, precip 61.3, wind mean 30.8 / max 63.5, cloud 100 | 0.23 | 0.20 | 0.90 |
+| Hong Kong 2023-09-02 | signal 10 still in force | tMax 27.4, precip 68.2, wind 30.4 / 51.1, cloud 87 | 0.09 | 0.09 | 0.96 |
 | London 2022-02-18 | Storm Eunice, first red wind warning, attractions closed | tMax 11.3, precip 2.6, wind 36.7 / 68.0, cloud 64 | 0.63 | 0.20 | 0.90 |
+
+With effective temperature instead of humidex, the two Hong Kong days scored 0.47 and 0.45 before the caps, so
+the caps were first motivated by them. With humidex the humid heat already pulls those days down, and the caps
+are needed for the London case: a dry, cool storm where the index stays high because wind has a weight of 1 out of
+10.
 
 | Place and date | What happened | Skiing before | Skiing after |
 |---|---|---|---|
@@ -421,7 +434,8 @@ Limitations:
 - ERA5 reanalysis, not forecasts. Real forecast error adds on top.
 - A handful of events and places, one to three years.
 - The two caps and the snow depth multiplier were derived from the same events they were then checked on, so the
-  improvement is not independent evidence. There is no independent set of storm days.
+  improvement is not independent evidence. There is no independent set of storm days. With humidex the storm
+  caps rest on a single documented event (Storm Eunice); Typhoon Saola is already low without them.
 - The Splugen slope closure on 2023-01-01 was dropped as a test case because the source did not give that date.
 - Surfing without wind direction and skiing in the off-season (snow present at high grid cells, so not null)
   were not fixed. Scoring refinement was deliberately postponed to the end of the work.
@@ -505,7 +519,6 @@ failures and stale responses; structured logs. Started only with a compose profi
 | GraphQL driver (Apollo or Mercurius) | not decided |
 | How e2e tests get Postgres | not decided |
 | `parserVersion` | needs a documented meaning (which number is which mapping) |
-| Effective temperature formula | Verify against Mieczkowski or Scott's data source |
 | `prisma validate` and first migration | the schema has not been run through Prisma yet |
 | Optional Open-Meteo API key | for the paid plan, header or query parameter per their documentation |
 | Scoring refinement | postponed to the end; see limitations in section 9 |
