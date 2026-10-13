@@ -1,6 +1,5 @@
 import { ArrayNotEmpty, IsArray, IsIn, IsNumber, IsString, Max, Min } from 'class-validator';
-
-export const ACTIVITIES = ['SKIING', 'SURFING', 'OUTDOOR_SIGHTSEEING', 'INDOOR_SIGHTSEEING'] as const;
+import { ACTIVITIES, type Activity } from '../../scoring/activity.js';
 
 export class ActivityScoresInput {
   @IsNumber()
@@ -22,5 +21,5 @@ export class ActivityScoresInput {
   @IsArray()
   @ArrayNotEmpty()
   @IsIn(ACTIVITIES, { each: true })
-  activities!: string[];
+  activities!: Activity[];
 }
