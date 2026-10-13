@@ -91,7 +91,12 @@ describe('GeocodingClient', () => {
 
     await client.search({ name: 'Rome', count: 3, language: 'en' });
 
-    expect(geocoding).toHaveBeenCalledWith({ name: 'Rome', count: 3, language: 'en', countryCode: undefined });
+    expect(geocoding).toHaveBeenCalledWith({
+      name: 'Rome',
+      count: 3,
+      language: 'en',
+      countryCode: undefined,
+    });
   });
 
   it('propagates geocoder failures', async () => {
