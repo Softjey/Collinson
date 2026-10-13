@@ -177,9 +177,21 @@ describe('weather repositories', () => {
 
     it('returns the newest snapshot by fetchedAt', async () => {
       const location = await locations.findOrCreate(barcelona);
-      await forecasts.insert(location.id, forecastData({ apiLatitude: 1 }, 2), new Date('2026-10-13T08:00:00Z'));
-      await forecasts.insert(location.id, forecastData({ apiLatitude: 2 }, 2), new Date('2026-10-13T14:00:00Z'));
-      await forecasts.insert(location.id, forecastData({ apiLatitude: 3 }, 2), new Date('2026-10-13T02:00:00Z'));
+      await forecasts.insert(
+        location.id,
+        forecastData({ apiLatitude: 1 }, 2),
+        new Date('2026-10-13T08:00:00Z'),
+      );
+      await forecasts.insert(
+        location.id,
+        forecastData({ apiLatitude: 2 }, 2),
+        new Date('2026-10-13T14:00:00Z'),
+      );
+      await forecasts.insert(
+        location.id,
+        forecastData({ apiLatitude: 3 }, 2),
+        new Date('2026-10-13T02:00:00Z'),
+      );
 
       const latest = await forecasts.findLatest(location.id);
 

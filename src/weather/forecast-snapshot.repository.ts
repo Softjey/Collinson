@@ -8,7 +8,11 @@ import type { ForecastData, StoredSnapshot } from './weather.types.js';
 export class ForecastSnapshotRepository {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaClient) {}
 
-  async insert(locationId: number, data: ForecastData, fetchedAt: Date): Promise<StoredSnapshot<ForecastData>> {
+  async insert(
+    locationId: number,
+    data: ForecastData,
+    fetchedAt: Date,
+  ): Promise<StoredSnapshot<ForecastData>> {
     const { hours, ...snapshot } = data;
     const [created] = await this.prisma.$transaction([
       this.prisma.forecastSnapshot.create({

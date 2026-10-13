@@ -82,7 +82,9 @@ describe('MarineClient', () => {
 
   it('keeps hasSea when only some wave heights are null', async () => {
     const response = fixture('marine-barcelona');
-    response.hourly.wave_height = (response.hourly.wave_height ?? []).map((value, i) => (i === 0 ? value : null));
+    response.hourly.wave_height = (response.hourly.wave_height ?? []).map((value, i) =>
+      i === 0 ? value : null,
+    );
     const { client } = clientReturning(response);
 
     const data = await client.fetch(location);

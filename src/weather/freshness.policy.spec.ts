@@ -39,9 +39,9 @@ describe('isReusable', () => {
     const fetchedAt = new Date('2026-10-12T23:00:00Z');
 
     expect(localDateOf(fetchedAt, base.timezone)).toBe('2026-10-13');
-    expect(isReusable({ ...base, fetchedAt, now: new Date('2026-10-13T01:00:00Z'), coverThrough: '2026-10-21' })).toBe(
-      false,
-    );
+    expect(
+      isReusable({ ...base, fetchedAt, now: new Date('2026-10-13T01:00:00Z'), coverThrough: '2026-10-21' }),
+    ).toBe(false);
   });
 
   it('covers today plus 7 days of the local fetch date', () => {
@@ -63,12 +63,20 @@ describe('isReusable', () => {
     const fetchedAt = hoursAgo(10);
 
     expect(
-      isReusable({ ...base, fetchedAt, refreshHours: 24, requiresCoverage: false, coverThrough: '2030-01-01' }),
+      isReusable({
+        ...base,
+        fetchedAt,
+        refreshHours: 24,
+        requiresCoverage: false,
+        coverThrough: '2030-01-01',
+      }),
     ).toBe(true);
   });
 
   it('still applies the interval when coverage is ignored', () => {
-    expect(isReusable({ ...base, fetchedAt: hoursAgo(25), refreshHours: 24, requiresCoverage: false })).toBe(false);
+    expect(isReusable({ ...base, fetchedAt: hoursAgo(25), refreshHours: 24, requiresCoverage: false })).toBe(
+      false,
+    );
   });
 });
 
