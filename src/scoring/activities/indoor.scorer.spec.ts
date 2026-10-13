@@ -25,7 +25,15 @@ describe('indoorScore', () => {
   });
 
   it('is 1 when the outdoor score is 0', () => {
-    const miserable = { ...pleasantDay, tMax: 50, rhMean: 100, precip: 30, windMean: 80, windMax: 100, cloud: 100 };
+    const miserable = {
+      ...pleasantDay,
+      tMax: 50,
+      rhMean: 100,
+      precip: 30,
+      windMean: 80,
+      windMax: 100,
+      cloud: 100,
+    };
 
     expect(indoorScore(miserable)).toBe(1);
   });

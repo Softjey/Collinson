@@ -117,7 +117,10 @@ describe('multipliers', () => {
 
 describe('skiingOutcome', () => {
   it('is NO_SNOW when depth and snowfall are both 0', () => {
-    expect(skiingOutcome(day({ snowDepthMax: 0, snowfallSum: 0 }))).toEqual({ kind: 'unscored', reason: 'NO_SNOW' });
+    expect(skiingOutcome(day({ snowDepthMax: 0, snowfallSum: 0 }))).toEqual({
+      kind: 'unscored',
+      reason: 'NO_SNOW',
+    });
   });
 
   it('is scored when only the snow depth is positive', () => {
@@ -134,7 +137,10 @@ describe('skiingOutcome', () => {
   it('combines the weighted utilities with the multipliers', () => {
     const outcome = skiingOutcome(day({ rain: 1.5, snowDepthMax: 0.15, snowHours: 1 }));
     const sui =
-      0.303 * snowUtility(1) + 0.279 * windUtility(0) + 0.222 * temperatureUtility(3) + 0.194 * cloudUtility(25);
+      0.303 * snowUtility(1) +
+      0.279 * windUtility(0) +
+      0.222 * temperatureUtility(3) +
+      0.194 * cloudUtility(25);
 
     expect(outcome.kind).toBe('scored');
     if (outcome.kind === 'scored') expect(outcome.score).toBeCloseTo(sui * 0.5 * 0.5);

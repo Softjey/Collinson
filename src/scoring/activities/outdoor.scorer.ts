@@ -7,7 +7,8 @@ import { clamp, stepLookup } from '../math.js';
 import { OUTDOOR_PARAMS } from '../scoring.params.js';
 
 export function humidex(temperature: number, relativeHumidity: number): number {
-  const vapourPressure = 6.112 * 10 ** ((7.5 * temperature) / (237.7 + temperature)) * (relativeHumidity / 100);
+  const vapourPressure =
+    6.112 * 10 ** ((7.5 * temperature) / (237.7 + temperature)) * (relativeHumidity / 100);
   return temperature + (5 / 9) * (vapourPressure - 10);
 }
 
@@ -42,7 +43,8 @@ export function outdoorScore(features: WeatherDayFeatures): number | null {
   const { wet, storm } = OUTDOOR_PARAMS.caps;
   let score = index;
   if (precip >= wet.precipitationFrom) score = Math.min(score, wet.maxScore);
-  if (windMax >= storm.windMaxFrom || precip >= storm.precipitationFrom) score = Math.min(score, storm.maxScore);
+  if (windMax >= storm.windMaxFrom || precip >= storm.precipitationFrom)
+    score = Math.min(score, storm.maxScore);
   return score;
 }
 

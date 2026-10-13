@@ -5,9 +5,11 @@ import type { Activity } from '../activity.js';
 import { interpolate } from '../math.js';
 import { SURFING_PARAMS } from '../scoring.params.js';
 
-export const waveHeightUtility = (waveHeight: number): number => interpolate(SURFING_PARAMS.waveHeight, waveHeight);
+export const waveHeightUtility = (waveHeight: number): number =>
+  interpolate(SURFING_PARAMS.waveHeight, waveHeight);
 
-export const wavePeriodUtility = (wavePeriod: number): number => interpolate(SURFING_PARAMS.wavePeriod, wavePeriod);
+export const wavePeriodUtility = (wavePeriod: number): number =>
+  interpolate(SURFING_PARAMS.wavePeriod, wavePeriod);
 
 export const windUtility = (windMax: number): number => interpolate(SURFING_PARAMS.wind, windMax);
 
@@ -31,7 +33,9 @@ export class SurfingScorer implements ActivityScorer {
 
     const { exponents } = SURFING_PARAMS;
     return scored(
-      heightUtility ** exponents.waveHeight * periodUtility ** exponents.wavePeriod * speedUtility ** exponents.wind,
+      heightUtility ** exponents.waveHeight *
+        periodUtility ** exponents.wavePeriod *
+        speedUtility ** exponents.wind,
     );
   }
 }

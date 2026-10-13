@@ -45,7 +45,8 @@ export const cloudUtility = (cloud: number): number => clamp((100 - cloud) / SKI
 
 export const rainMultiplier = (rain: number): number => clamp(1 - rain / SKIING_PARAMS.rainZeroAt);
 
-export const depthMultiplier = (snowDepthMax: number): number => Math.min(1, snowDepthMax / SKIING_PARAMS.fullDepthAt);
+export const depthMultiplier = (snowDepthMax: number): number =>
+  Math.min(1, snowDepthMax / SKIING_PARAMS.fullDepthAt);
 
 export function skiingOutcome(features: WeatherDayFeatures): DayOutcome {
   const { tMax, cloud, windMean, rain, snowfallSum, snowDepthMax, snowHours } = features;

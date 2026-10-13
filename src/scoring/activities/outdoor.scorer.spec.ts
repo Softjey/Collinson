@@ -25,7 +25,10 @@ const pleasantDay: WeatherDayFeatures = {
   windMax: 20,
 };
 
-const day = (overrides: Partial<WeatherDayFeatures>): WeatherDayFeatures => ({ ...pleasantDay, ...overrides });
+const day = (overrides: Partial<WeatherDayFeatures>): WeatherDayFeatures => ({
+  ...pleasantDay,
+  ...overrides,
+});
 
 describe('humidex', () => {
   it('equals the temperature when the vapour term is zero', () => {
@@ -217,14 +220,14 @@ describe('outdoor scoring of the dated events', () => {
   it('scores London on 2022-02-18 0.63 before the caps and 0.20 after', () => {
     const london = loadEventFeatures('london', '2022-02-18');
 
-    expect(categorize(holidayClimateIndex(london)).score).toBe(0.63);
+    expect(categorize(holidayClimateIndex(london) ?? NaN).score).toBe(0.63);
     expect(categorize(outdoorScore(london) ?? NaN).score).toBe(0.2);
   });
 
   it('scores Hong Kong on 2023-09-01 0.23 before the caps and 0.20 after', () => {
     const hongKong = loadEventFeatures('hong-kong', '2023-09-01');
 
-    expect(categorize(holidayClimateIndex(hongKong)).score).toBe(0.23);
+    expect(categorize(holidayClimateIndex(hongKong) ?? NaN).score).toBe(0.23);
     expect(categorize(outdoorScore(hongKong) ?? NaN).score).toBe(0.2);
   });
 

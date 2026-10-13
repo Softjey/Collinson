@@ -65,7 +65,10 @@ function localDateKey(formatter: Intl.DateTimeFormat, unixSeconds: number): stri
   return `${part('year')}-${part('month')}-${part('day')}`;
 }
 
-function groupByLocalDay<T extends { time: number }>(hours: readonly T[], timeZone: string): Map<string, T[]> {
+function groupByLocalDay<T extends { time: number }>(
+  hours: readonly T[],
+  timeZone: string,
+): Map<string, T[]> {
   const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone,
     year: 'numeric',
@@ -115,7 +118,10 @@ export function weatherDailyFeatures(
   });
 }
 
-export function marineDailyFeatures(hours: readonly HourlyMarine[], timeZone: string): Map<string, MarineDayFeatures> {
+export function marineDailyFeatures(
+  hours: readonly HourlyMarine[],
+  timeZone: string,
+): Map<string, MarineDayFeatures> {
   return mapDays(hours, timeZone, (day) => ({
     waveHeight: max(day.map((h) => h.waveHeight)),
     wavePeriod: max(day.map((h) => h.wavePeriod)),

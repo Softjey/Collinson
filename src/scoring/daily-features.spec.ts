@@ -22,9 +22,16 @@ function weatherHour(iso: string, overrides: Partial<HourlyWeather> = {}): Hourl
   };
 }
 
-function hoursOfDay(startIso: string, count: number, overrides: Partial<HourlyWeather> = {}): HourlyWeather[] {
+function hoursOfDay(
+  startIso: string,
+  count: number,
+  overrides: Partial<HourlyWeather> = {},
+): HourlyWeather[] {
   const start = unix(startIso);
-  return Array.from({ length: count }, (_, i) => ({ ...weatherHour(startIso, overrides), time: start + i * 3600 }));
+  return Array.from({ length: count }, (_, i) => ({
+    ...weatherHour(startIso, overrides),
+    time: start + i * 3600,
+  }));
 }
 
 describe('weatherDailyFeatures', () => {
@@ -166,7 +173,9 @@ describe('weatherDailyFeatures', () => {
   });
 
   it('rejects an unknown time zone', () => {
-    expect(() => weatherDailyFeatures([weatherHour('2024-01-10T00:00:00Z')], 'Mars/Olympus')).toThrow(RangeError);
+    expect(() => weatherDailyFeatures([weatherHour('2024-01-10T00:00:00Z')], 'Mars/Olympus')).toThrow(
+      RangeError,
+    );
   });
 });
 
@@ -190,7 +199,10 @@ describe('marineDailyFeatures', () => {
   it('gives null features when every value is null', () => {
     const hours = [marineHour('2024-01-10T00:00:00Z', null, null)];
 
-    expect(marineDailyFeatures(hours, 'UTC').get('2024-01-10')).toEqual({ waveHeight: null, wavePeriod: null });
+    expect(marineDailyFeatures(hours, 'UTC').get('2024-01-10')).toEqual({
+      waveHeight: null,
+      wavePeriod: null,
+    });
   });
 
   it('groups by the local calendar day', () => {
