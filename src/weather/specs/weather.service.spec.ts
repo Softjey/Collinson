@@ -3,10 +3,16 @@ import {
   OpenMeteoBadRequestError,
   OpenMeteoRateLimitedError,
   OpenMeteoUnavailableError,
-} from '../shared/open-meteo/open-meteo.errors.js';
-import type { Clock } from './clock.js';
-import type { ForecastData, LocationRef, MarineData, SourceResult, StoredSnapshot } from './weather.types.js';
-import { WeatherService } from './weather.service.js';
+} from '../../shared/open-meteo/open-meteo.errors.js';
+import type { Clock } from '.././clock.js';
+import type {
+  ForecastData,
+  LocationRef,
+  MarineData,
+  SourceResult,
+  StoredSnapshot,
+} from '.././weather.types.js';
+import { WeatherService } from '.././weather.service.js';
 
 const HOUR = 3_600_000;
 const NOW = new Date('2026-10-13T12:00:00Z');

@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import { SingleFlight } from './single-flight.js';
+import { SingleFlight } from '.././single-flight.js';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;

@@ -4,12 +4,14 @@ import {
   OpenMeteoBadRequestError,
   OpenMeteoRateLimitedError,
   OpenMeteoUnavailableError,
-} from '../shared/open-meteo/open-meteo.errors.js';
-import type { OpenMeteoService } from '../shared/open-meteo/open-meteo.service.js';
-import { ForecastClient, FORECAST_PARSER_VERSION } from './forecast.client.js';
+} from '../../shared/open-meteo/open-meteo.errors.js';
+import type { OpenMeteoService } from '../../shared/open-meteo/open-meteo.service.js';
+import { ForecastClient, FORECAST_PARSER_VERSION } from '.././forecast.client.js';
 
 function fixture(): Record<string, unknown> & { hourly: Record<string, unknown[]> } {
-  const path = fileURLToPath(new URL('../../test/fixtures/weather/forecast-barcelona.json', import.meta.url));
+  const path = fileURLToPath(
+    new URL('../../../test/fixtures/weather/forecast-barcelona.json', import.meta.url),
+  );
   return JSON.parse(readFileSync(path, 'utf8'));
 }
 
