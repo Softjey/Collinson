@@ -2,7 +2,6 @@ import { execFileSync } from 'node:child_process';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 
 declare global {
-  // eslint-disable-next-line no-var
   var __POSTGRES__: StartedPostgreSqlContainer | undefined;
 }
 

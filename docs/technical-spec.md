@@ -2,7 +2,7 @@
 
 Everything needed to write an implementation plan for this service. It collects what was decided, the data
 behind the decisions, and what is still open. Short decision log: [DECISIONS.md](../DECISIONS.md). Contracts:
-[graphql-schema.graphql](graphql-schema.graphql) and [prisma/schema.prisma](../prisma/schema.prisma).
+[schema.graphql](../contracts/graphql/schema.graphql) and [prisma/schema.prisma](../prisma/schema.prisma).
 
 Status words used below:
 
@@ -51,7 +51,7 @@ service with its own database.
 
 ## 3. API contract (decided)
 
-The full contract is [graphql-schema.graphql](graphql-schema.graphql). It is written by hand and does not expose
+The full contract is [schema.graphql](../contracts/graphql/schema.graphql). It is written by hand and does not expose
 internal details (no mention of Open-Meteo, caching or limits). Summary:
 
 | Operation | Input | Output |

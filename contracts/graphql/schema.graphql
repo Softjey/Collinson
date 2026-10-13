@@ -31,6 +31,7 @@ enum ScoreCategory {
 enum UnscoredReason {
   NO_SEA
   NO_SNOW
+  NO_DATA
 }
 
 """Kind of data a result is based on."""
@@ -101,8 +102,8 @@ type ActivityScores {
 type ScoredLocation {
   latitude: Float!
   longitude: Float!
-  """Metres above sea level."""
-  elevation: Float!
+  """Metres above sea level. Null until weather data for the point has been stored."""
+  elevation: Float
   """IANA time zone name. Days are calendar days in this zone."""
   timezone: String!
 }
