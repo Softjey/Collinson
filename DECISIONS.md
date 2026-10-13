@@ -73,6 +73,9 @@ Formulas, tables, data and the full design are in [docs/technical-spec.md](docs/
 - **Two steps, loosely coupled modules.** Location search is separate from ranking, which takes coordinates
   only. The modules share no foreign keys and no model imports, so each can become its own service with its own
   database. Why: a name does not identify a place, and any consumer can supply coordinates.
+- **Open-Meteo is assumed to be a stable service that will not change.** This was not discussed with the team
+  beforehand. The code is not designed so that Open-Meteo can be easily replaced. It is designed for the easiest
+  maintenance of all the code and for fewer abstractions.
 - **TypeScript, NestJS, GraphQL, class-validator, zod** for upstream responses, **Prisma** with PostgreSQL.
 - **Schema-first GraphQL.** The contract is kept in its own folder as the fixed contract for communication; the
   file in `docs/` is a draft.
