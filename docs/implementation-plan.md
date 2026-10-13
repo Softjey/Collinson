@@ -92,10 +92,10 @@ src/
   shared/
     config/        env.schema.ts, config.module.ts
     database/      prisma.service.ts, database.module.ts
-    open-meteo/    open-meteo-http.client.ts, open-meteo.errors.ts
+    open-meteo/    open-meteo.module.ts, open-meteo.service.ts, open-meteo-http.client.ts (internal), open-meteo.errors.ts
     clock/         clock.ts
-    graphql/       date.scalar.ts, date-time.scalar.ts, error-formatter.ts
-    single-flight.ts
+    graphql/       scalars/ (date, date-time), error-formatter.ts
+    retry.ts, single-flight.ts
   search/          search.module.ts, search.resolver.ts, search.service.ts,
                    geocoding.client.ts, place.repository.ts, dto/
   weather/         weather.module.ts, weather.service.ts, freshness.policy.ts,
@@ -214,7 +214,7 @@ not usable -> fetch (single-flight key "<source>:<locationId>", retry per P6)
 |---|---|---|
 | Unit | scoring, freshness policy, date validation, mappers, zod schemas, HTTP client retry logic, config | Jest, fake `Clock`, injected `fetch` |
 | Integration | repositories against real Postgres | Jest, Testcontainers, real migrations |
-| e2e | GraphQL over HTTP through the whole app | `@nestjs/testing`, supertest, Testcontainers, Open-Meteo HTTP client overridden with a scripted fake |
+| e2e | GraphQL over HTTP through the whole app | `@nestjs/testing`, supertest, Testcontainers, `OpenMeteoService` overridden with a scripted fake |
 
 No test ever calls the real Open-Meteo. Every ticket follows TDD: tests first, positive and negative cases.
 Single spec files are run during work; the full suite before a commit.

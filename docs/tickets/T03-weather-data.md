@@ -21,7 +21,7 @@ Touches only `src/weather/` and `test/fixtures/weather/`. No import from `search
 
 ### 1. Forecast and marine clients
 
-- Built on `OpenMeteoHttpClient` from T01.
+- Built on `OpenMeteoService` from T01.
 - Forecast request: the 10 hourly variables of spec section 4, `forecast_days=8`, the time zone passed in,
   `timeformat=unixtime`.
 - Marine request: the 5 hourly variables, `forecast_days=8`, the same time zone, `timeformat=unixtime`,

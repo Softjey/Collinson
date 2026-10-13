@@ -18,7 +18,7 @@ Touches only `src/search/` and `test/fixtures/search/`. No import from `weather`
 
 ## Scope
 
-- `GeocodingClient` on `OpenMeteoHttpClient` from T01: parameters `name`, `count`, `language`, optional
+- `GeocodingClient` on `OpenMeteoService.geocoding` from T01: parameters `name`, `count`, `language`, optional
   `countryCode`; zod schema; a response without `results` is an empty list.
 - `PlaceRepository`: upsert `Place` by GeoNames id; find a `PlaceSearch` by its key; store a search with its
   ordered hits; replace the hits of an existing search in one transaction.

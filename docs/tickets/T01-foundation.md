@@ -55,13 +55,15 @@ References: [implementation plan](../implementation-plan.md) sections 2, 3.2, 3.
 
 ### 5. Open-Meteo HTTP client
 
-- `OpenMeteoHttpClient.get(url, params)` in `src/shared/open-meteo/`, using an injected `fetch` and
-  `AbortSignal.timeout`.
+- `OpenMeteoModule` in `src/shared/open-meteo/` exports only `OpenMeteoService` with `forecast`, `marine` and
+  `geocoding`, each taking query parameters and returning the JSON body. The internal `OpenMeteoHttpClient`
+  (one instance per endpoint, built on `@nestjs/axios`) is not exported.
 - Typed errors: `OpenMeteoRateLimitedError` (429), `OpenMeteoBadRequestError` (other 4xx, keeps `reason`),
   `OpenMeteoUnavailableError` (network, timeout, 5xx, invalid JSON).
-- Retry policy (P6): retry on network error, timeout and 5xx, up to `OPEN_METEO_RETRIES`; never on 4xx.
+- Retry policy (P6): retry on network error, timeout and 5xx, up to `OPEN_METEO_RETRIES`; never on 4xx. The
+  retry loop is the generic `retry` utility in `src/shared/retry.ts`.
 - The API key is added as a query parameter only when configured. Verify how the paid plan expects it (P15).
-- A scripted fake of this client in `test/support/` for e2e tests: it is the single seam replaced in e2e.
+- A scripted fake of `OpenMeteoService` in `test/support/` for e2e tests: it is the single seam replaced in e2e.
 
 ### 6. Health
 
