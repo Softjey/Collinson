@@ -1,164 +1,90 @@
 # Decisions
 
-> Running log of decisions, open questions, assumptions, and things that were cut (with a one-line reason).
+Running log of decisions, assumptions, open questions and things cut, each with a short reason.
+Formulas, tables, data and the full design are in [docs/technical-spec.md](docs/technical-spec.md).
 
-## Ranking granularity and output
+## Product
 
-**Question (for PM):** The brief says "ranks how good the next 7 days will be for each of these activities". Is the ranking one verdict for the whole week, or a separate one per day?
-
-**Decision:**
-
-- Each activity is evaluated separately for each of the 7 days.
-- The API returns a `score` for every activity on every day.
-- The API does not return a `rank`; sorting by `score` is left to the client.
-
-**Why:** A traveller arriving in a new city wants to know which day suits skiing and which day suits sightseeing. A concrete per-day answer is more useful than a weekly aggregate.
-
-## Date range
-
-**Decision:**
-
-- The API takes `fromDate` and `toDate` instead of a fixed "next 7 days".
-- The range is limited to 8 days, matching the Open-Meteo Marine API (forecast supports up to 16).
-- The values are dates without a time, because the Open-Meteo daily endpoints accept only dates (a datetime returns a 400).
-- Validation of the date range, with "today" taken in the time zone of the location:
-  - `fromDate` is less than or equal to `toDate`;
-  - `fromDate` is today or later;
-  - `toDate` is at most 7 days after today, so the range always lies within the 8 days that are fetched (today and the next 7). This also makes the range at most 8 days long.
-- The time zone used for "today" is determined offline from the coordinates, so validation does not need a call to Open-Meteo.
-- Validation of the input shape (class-validator): latitude from -90 to 90, longitude from -180 to 180, dates in `YYYY-MM-DD` form, a place search count from 1 to 100.
-- Any violation is rejected with a validation error before scores are computed.
-
-**Why:** The client asks only for what it needs, which makes the API more convenient and flexible. Marine data, needed for surfing, only covers 8 days.
-
-## Supported locations
-
-**Decision:**
-
-- Any location is supported, i.e. anything Open-Meteo accepts by coordinates.
-- If an activity is not possible at a location at all, its `score` is `null` instead of a low number.
-- Surfing is `null` when there is no sea, since it is impossible without one. The Marine API is queried with `cell_selection=sea`, and "no sea" means all wave values are `null`. With the default `land` selection, coastal cities such as Barcelona, Sydney and Nice returned `null`.
-- Skiing is `null` for a given day when there is no snow on the ground and no snowfall that day. This is decided per day, not for the whole range.
-- Outdoor sightseeing and indoor sightseeing always have a number; bad weather is a low score, never `null`.
+- **Per day, per activity.** Each activity is scored for each requested day and the API returns no rank, so the
+  client sorts. Why: a traveller wants to know which day suits skiing and which day suits the city, and a weekly
+  aggregate hides that.
+- **Date range, not "next 7 days".** The API takes `fromDate` and `toDate` as dates (Open-Meteo daily data has
+  no time component). `fromDate` is today or later, `fromDate <= toDate`, and `toDate` is at most 7 days after
+  today, all in the location's time zone, which is determined offline from coordinates. Why: the client asks for
+  what it needs, and the 8 fetched days match the 8 days of marine data.
+- **Score 0 to 1 plus a category 1 to 8.** The categories are the 8 HCI classes for all activities, with the
+  first two renamed to Unsuitable and Poor. No explanation of the score is returned. Why: one shared scale lets a
+  client compare activities.
+- **Impossible is not low.** Surfing without sea and skiing on a day without snow or snowfall are reported as
+  unscored days, never as a low number. Outdoor and indoor sightseeing are always scored.
+- **Any coordinates are supported.** "Regional" is about expected audience and load, not a restriction.
 
 ## Scoring
 
-**Decision:**
+- **Based on published research and real Open-Meteo data**, not invented rules: Skiing Utility Index (skiing),
+  HCI:Urban (outdoor). Surfing thresholds come from surf forecasting practice. Indoor is our own model:
+  `0.5 + 0.5 * (1 - outdoor)`.
+- **Surfing assumes a general or intermediate surfer**, with no skill parameter.
+- **Additions made after validating on historical days:** outdoor is capped at 0.5 from 6 mm of daily
+  precipitation and at 0.2 from 60 km/h maximum wind or 25 mm; skiing is multiplied by
+  `min(1, snow depth / 0.3 m)` and by `(1 - rain / 3 mm)`. Why: plain HCI scored Typhoon Saola at 0.47 and Storm
+  Eunice at 0.63, and skiing scored early season days as high as mid-winter ones.
+- **Known limits, refinement postponed to the end:** no wind direction for surfing, skiing in the off-season is
+  not always unscored, caps were derived from the same events they were checked on.
 
-- Each activity has its own criteria, and the score is computed from them on a scale from 0 to 1.
-- The criteria are based on published research and on real data returned by Open-Meteo, not on invented rules.
-- Scores of different activities should be comparable, so they can be ranked against each other.
-- Surfing assumes a general/intermediate surfer.
-- Indoor sightseeing has a baseline of 0.5 and grows when the weather is bad outdoors (no dedicated research, our own modelling).
-- Outdoor sightseeing score is capped at 0.5 when daily precipitation is 6 mm or more.
-- Outdoor sightseeing score is capped at 0.2 when daily maximum wind is 60 km/h or more, or daily precipitation is 25 mm or more. Added after validation on historical storm days (Typhoon Saola, Storm Eunice), where plain HCI scored them 0.47 and 0.63.
-- Skiing score is multiplied by `min(1, snow_depth_m / 0.3)`, so a thin snow base lowers the score. Added after validation: without it, early-season days scored as high as mid-winter ones (Aspen, October).
+## Data and storage
 
-**Criteria (confirmed):**
-
-- **Skiing:** Skiing Utility Index (Kapetanakis et al., 2022). Weights: snowfall duration 0.303, wind 0.279, daily max temperature 0.222, cloud cover 0.194, with the utility functions from the paper. The score is multiplied by `(1 - rain_mm / 3)` (our assumption; the paper only states that most skiers avoid rain). A day is `null` when snow depth is 0 and snowfall is 0.
-- **Surfing:** wave height 0.35, wave period 0.35, wind 0.30, combined as a weighted geometric mean, so a flat or blown-out day scores 0. Anchors come from surf-forecasting practice: wave height 0.3 m → 0, 0.8 → 0.6, 1-2 → 1, 3 → 0.5, 4 → 0; period 5 s → 0, 8 → 0.4, 10 → 0.7, 13 → 1; wind ≤15 km/h → 1, 25 → 0.7, 40 → 0.3, 55 → 0.
-- **Indoor sightseeing:** `0.5 + 0.5 * (1 - outdoor)`, using the outdoor score after the precipitation cap.
-- **Outdoor sightseeing:** HCI:Urban (Scott et al., 2016) with its rating tables, checked against the original paper: `4 * thermal comfort + 2 * cloud cover + 3 * precipitation + wind`. Thermal comfort uses effective temperature from daily max temperature and mean relative humidity, as in the paper.
-
-## Score presentation
-
-**Decision:**
-
-- The API returns a `score` and a category index (1-8) for each activity, with no explanation of how the score was computed.
-- The category index uses the 8 HCI classes, applied to all four activities, with the first two renamed for our case: 1 Unsuitable (0-0.09), 2 Poor (0.10-0.39), 3 Marginal (0.40-0.49), 4 Acceptable (0.50-0.59), 5 Good (0.60-0.69), 6 Very good (0.70-0.79), 7 Excellent (0.80-0.89), 8 Ideal (0.90-1.00).
-- The client decides whether to show the score and how to interpret it, or to show only a ranking.
-- The score is on a scale from 0 to 1 (see Scoring).
-
-## Data refresh frequency
-
-**Decision:**
-
-- Weather data (Open-Meteo Forecast) is refreshed every 6 hours.
-- Wave data (Open-Meteo Marine) is refreshed every 24 hours.
-
-**Why:** There is no stated freshness requirement, so this is based on measurements against Open-Meteo.
-
-- The weather model (GFS) itself updates every 6 hours, so refreshing more often gives no new data.
-- A cached forecast for tomorrow that is 6-12 hours old differs from a fresh one by under 0.5 °C; for days further out the forecast fluctuates between runs regardless of cache age, so refreshing more often adds noise rather than accuracy.
-- Wave forecasts change more slowly than weather: for tomorrow, a 24-hour-old cache differs by about 0.07 m (4%) from a fresh one.
-
-## Audience and load
-
-**Question (for the team):** What load, availability and latency are expected, and is the service regional or worldwide?
-
-**Assumption:**
-
-- The audience is small, so the service is built for low load.
-- The service is regional rather than worldwide.
-- "Regional" describes the audience and load, not a restriction on locations: a user in Poland planning a trip to the Alps must be able to use it.
-- This is only an assumption to be checked with the team.
-- Open-Meteo rate limits are not a concern for the exercise; production is assumed to run on a paid plan with higher limits.
-- Authentication and rate limiting of our own API are out of scope, to be discussed separately.
-
-## Location input: geocoding vs. ranking
-
-**Question (for the team):** The brief says the service "takes a city or town". Should the ranking accept a city name and geocode internally, or accept coordinates, with location search as a separate step?
-
-**Assumption:**
-
-- Two steps: location search is separate from ranking, and the ranking takes coordinates only.
-- To be revisited with the team; no one to ask here, so this is the working assumption.
-
-**Why:**
-
-- Coordinates keep the ranking independent of where the location came from. Any consumer can supply it, e.g. a frontend map picker that only has coordinates.
-- A city name plus country does not identify a place. One country can have many settlements with the same name, so it is unclear which one to return.
-- Mixing location lookup and weather ranking in one function gives the service two responsibilities; two steps keep them separate and easier to maintain.
-
-**Decision:** For this exercise, location search is a separate module within the same service, so it can easily be split out later if needed.
-
-- The modules are loosely coupled: no foreign keys between place search and weather tables, and no code imports of each other's models. Each module can later become its own service with its own database.
-
-## Storage
-
-**Decision:**
-
-- PostgreSQL is the only store. No Redis: Postgres handles the expected load, and persisted data is what the brief asks for. There is no shared counter for Open-Meteo limits either: if Open-Meteo returns an error and there is no stored data, the request fails with an error.
-- Concurrent refreshes of the same location are deduplicated with an in-memory map of in-flight fetches inside one instance. A race between instances is accepted: it costs at most one extra stored row, because writes are append-only.
-- Each fetch always requests 8 days from today, regardless of the requested range, so there is one stored state per location rather than one per range. This costs the same: Open-Meteo counts a request as one call up to 10 weather variables and 2 weeks.
-- Raw hourly data from Open-Meteo is stored as received, after validation. Scoring features (daily aggregates) are derived from it at read time, so changing the scoring needs no data migration.
-- No spatial database or PostGIS. Coordinates are rounded to 2 decimals (about 1.1 km) before calling Open-Meteo, and the rounded pair is a unique key.
-- Every fetched state is stored with its fetch time, and reads always take the latest one. Retention of old states is still to be decided.
-- Results of location search are stored in Postgres too, so repeated searches are fast and do not hit the geocoding API every time.
-- Data is fetched on demand: when a request needs data that is older than its refresh interval, it is fetched then.
+- **PostgreSQL only.** No Redis, no PostGIS. Why: the load is low and persisted data is what the brief asks for.
+- **Coordinates rounded to 2 decimals (about 1.1 km)**, stored as integers with a unique key. Why: finer than the
+  weather grid, coarse enough to remove GPS jitter, and fine in the mountains.
+- **Raw hourly data in typed columns, no JSONB**, as snapshots with their fetch time. Features and scores are
+  derived at read time. Why: changing the scoring needs no data migration.
+- **Always fetch 8 days from today**, whatever range was requested. Why: one stored state per location, and one
+  Open-Meteo call (up to 10 variables and 2 weeks).
+- **Refresh on demand:** weather every 6 hours, waves every 24 hours. Why: the model updates every 6 hours, and
+  waves change slowly.
+- **Place search results are stored** so repeated searches do not call the geocoder.
+- **Marine is queried with `cell_selection=sea`**, and no wave values means no sea. Why: the default returned
+  nothing for coastal cities such as Barcelona, Sydney and Nice.
+- **Concurrency:** an in-memory map of in-flight fetches per instance. A race between instances is accepted
+  because writes are append-only.
 
 ## Errors and stale data
 
-**Decision:**
+- **Stale data is served with the time it was actually fetched**, per source, and the client decides what to show.
+- **Data older than 48 hours is not served.** One limit for all sources. Why: in the measurements the score
+  error roughly doubles between 24 and 48 hours for the nearest days.
+- **Failures are per activity.** If waves fail only surfing fails.
+- **No limit counter.** If Open-Meteo fails or limits requests and there is no stored data, the activity gets an
+  error. Production is assumed to use a paid plan.
+- **Requests to Open-Meteo are retried once**, with timeout and retries in environment variables.
 
-- When fresh data cannot be fetched, stale data is returned together with the time it was actually fetched, per source. The client decides what to show the user.
-- Stale data older than 48 hours is not returned; the request fails instead.
-- This applies per activity: if the wave data is too old, only surfing fails, and skiing, outdoor and indoor sightseeing are still returned.
-- When Open-Meteo rate limits are hit, the response carries the time of the last fetch, and a dedicated error is raised only when there is no stored data at all.
+## Architecture and stack
 
-**Why:** In our measurements a cached forecast changes noticeably with age. With a 24-hour-old cache the score changes by about 0.05 for tomorrow, and with a 48-hour-old cache by up to 0.12 for skiing three days ahead. 48 hours was chosen as a single limit for all sources.
+- **Two steps, loosely coupled modules.** Location search is separate from ranking, which takes coordinates
+  only. The modules share no foreign keys and no model imports, so each can become its own service with its own
+  database. Why: a name does not identify a place, and any consumer can supply coordinates.
+- **TypeScript, NestJS, GraphQL, class-validator, zod** for upstream responses, **Prisma** with PostgreSQL.
+- **The GraphQL contract is written by hand**, not generated from the models, and exposes no internals.
+  Nullable fields are avoided so invalid combinations cannot be expressed.
+- **Activities share one interface**, so adding an activity does not touch the others.
+- **Health reports only our own service.** Observability with OpenTelemetry and grafana/otel-lgtm behind a
+  flag. Dockerfiles and one docker compose.
+- **Tests:** unit tests for everything, e2e with the NestJS tools and a mocked Open-Meteo.
 
-## Stack and tooling
+## Assumptions to check with the team
 
-**Decision:**
+- Load is low, the audience is small, availability and latency targets were not discussed.
+- Ranking takes coordinates only, with location search as a separate step.
+- The 48 hour limit and the 6 and 24 hour refresh intervals have no stated requirement behind them.
 
-- TypeScript, NestJS, GraphQL, class-validator for request validation, zod for validating Open-Meteo responses.
-- Prisma with PostgreSQL for storage and migrations.
-- GraphQL contracts are written by hand and are not generated from Prisma models, because they are shared across services.
-- Requests to Open-Meteo are retried once. The timeout and retry settings are environment variables.
-- Each activity is implemented behind one common interface, so a new activity can be added without touching the others.
-- A health endpoint reports the state of our own service; it does not call Open-Meteo.
-- Observability with OpenTelemetry and grafana/otel-lgtm, started only behind a flag (a compose profile), so the default run does not need it.
-- Dockerfiles for everything and one docker compose to run it all locally.
-- Unit tests cover everything; e2e tests use the NestJS testing tools with a mocked Open-Meteo API, so they never call the real one.
+## Out of scope and cut
+
+- Authentication and rate limiting of our own API: a layer on top of the solution, to be discussed separately.
+- Cleaning up stored snapshots: little data at this scale, and fetching is on demand.
+- Background refresh job, Redis, a shared limit counter, cross-instance locking: not worth it at this scale.
+- Wind direction and skill levels for surfing, resort-level data for skiing.
 
 ## Licence
 
-- Open-Meteo data is licensed CC BY 4.0, so attribution has to be stated in the README.
-
-## Out of scope
-
-- Authentication and rate limiting of our own API.
-- Cleaning up the stored fetch history. At the expected scale it takes little space in Postgres, and data is fetched on demand, so it can be solved later as a separate task.
-- The draft contract is in `docs/graphql-schema.graphql`. It exposes no internal details of the service.
+Open-Meteo data is CC BY 4.0, so attribution is stated in the README.
