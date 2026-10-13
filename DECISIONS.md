@@ -49,6 +49,9 @@ Formulas, tables, data and the full design are in [docs/technical-spec.md](docs/
 - **Place search results are stored** so repeated searches do not call the geocoder.
 - **Marine is queried with `cell_selection=sea`**, and no wave values means no sea. Why: the default returned
   nothing for coastal cities such as Barcelona, Sydney and Nice.
+- **A stored snapshot that does not cover the requested dates is refetched**, even when it is within its
+  refresh interval.
+- **Place search results are kept for 30 days.**
 - **Concurrency:** an in-memory map of in-flight fetches per instance. A race between instances is accepted
   because writes are append-only.
 
@@ -58,6 +61,9 @@ Formulas, tables, data and the full design are in [docs/technical-spec.md](docs/
 - **Data older than 48 hours is not served.** One limit for all sources. Why: in the measurements the score
   error for skiing roughly doubles between 24 and 48 hours on the nearest days.
 - **Failures are per activity.** If waves fail only surfing fails.
+- **A day the stored data does not cover is an unscored day with reason `NO_DATA`.**
+- **`ScoredLocation.elevation` is nullable**: there is no elevation when the first weather request for a point
+  fails.
 - **No limit counter.** If Open-Meteo fails or limits requests and there is no stored data, the activity gets an
   error. Production is assumed to use a paid plan.
 - **Requests to Open-Meteo are retried once**, with timeout and retries in environment variables.
@@ -68,6 +74,9 @@ Formulas, tables, data and the full design are in [docs/technical-spec.md](docs/
   only. The modules share no foreign keys and no model imports, so each can become its own service with its own
   database. Why: a name does not identify a place, and any consumer can supply coordinates.
 - **TypeScript, NestJS, GraphQL, class-validator, zod** for upstream responses, **Prisma** with PostgreSQL.
+- **Schema-first GraphQL.** The contract is kept in its own folder as the fixed contract for communication; the
+  file in `docs/` is a draft.
+- **e2e tests get PostgreSQL from Testcontainers.**
 - **The GraphQL contract is written by hand**, not generated from the models, and exposes no internals.
   Nullable fields are avoided so invalid combinations cannot be expressed.
 - **Activities share one interface**, so adding an activity does not touch the others.
