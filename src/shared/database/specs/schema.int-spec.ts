@@ -1,5 +1,5 @@
-import { createTestPrisma, truncateAll } from '../../../test/support/database.js';
-import type { PrismaClient } from '../../generated/prisma/client.js';
+import { createTestPrisma, truncateAll } from '../../../../test/support/database.js';
+import type { PrismaClient } from '../../../generated/prisma/client.js';
 
 describe('database schema', () => {
   let prisma: PrismaClient;

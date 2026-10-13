@@ -6,12 +6,12 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios';
-import { OpenMeteoHttpClient } from './open-meteo-http.client.js';
+import { OpenMeteoHttpClient } from '.././open-meteo-http.client.js';
 import {
   OpenMeteoBadRequestError,
   OpenMeteoRateLimitedError,
   OpenMeteoUnavailableError,
-} from './open-meteo.errors.js';
+} from '.././open-meteo.errors.js';
 
 function reply(status: number, data: unknown) {
   return async (config: InternalAxiosRequestConfig): Promise<AxiosResponse> => ({
