@@ -4,8 +4,6 @@ import { isValidLocalDate } from './local-date.js';
 
 @Scalar('Date')
 export class DateScalar implements CustomScalar<string, string> {
-  description = 'A calendar date without a time, YYYY-MM-DD.';
-
   serialize(value: unknown): string {
     return this.validate(value);
   }

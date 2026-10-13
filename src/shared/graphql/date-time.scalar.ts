@@ -5,8 +5,6 @@ const UTC_ISO_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;
 
 @Scalar('DateTime')
 export class DateTimeScalar implements CustomScalar<string, Date> {
-  description = 'An instant in time, ISO 8601, in UTC.';
-
   serialize(value: unknown): string {
     if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
       throw new GraphQLError('DateTime cannot represent a value that is not a valid Date');
