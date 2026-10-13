@@ -1,0 +1,57 @@
+{
+  "name": "weather-activity-ranker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Ranks the next days for skiing, surfing and sightseeing in a city using persisted Open-Meteo data.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "postinstall": "prisma generate",
+    "start:dev": "nest start --watch",
+    "start": "node dist/src/main.js",
+    "build": "prisma generate && nest build",
+    "lint": "eslint \"{src,test}/**/*.ts\"",
+    "format": "prettier --write \"{src,test}/**/*.ts\"",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.mjs",
+    "test:int": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.int.config.mjs --runInBand",
+    "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.e2e.config.mjs --runInBand"
+  },
+  "dependencies": {
+    "@apollo/server": "5.5.1",
+    "@nestjs/apollo": "14.0.3",
+    "@nestjs/common": "12.1.3",
+    "@nestjs/core": "12.1.3",
+    "@nestjs/graphql": "14.0.3",
+    "@nestjs/platform-express": "12.1.3",
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "class-transformer": "0.5.1",
+    "class-validator": "0.15.1",
+    "graphql": "17.0.2",
+    "pg": "8.23.1",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "12.0.8",
+    "@nestjs/schematics": "12.0.7",
+    "@nestjs/testing": "12.1.3",
+    "@testcontainers/postgresql": "12.2.1",
+    "@types/express": "5.0.6",
+    "@types/jest": "30.0.0",
+    "@types/node": "26.6.5",
+    "@types/pg": "8.23.1",
+    "@types/supertest": "7.2.1",
+    "eslint": "10.12.0",
+    "jest": "30.5.2",
+    "prettier": "3.9.10",
+    "prisma": "7.10.0",
+    "supertest": "7.3.1",
+    "ts-jest": "29.4.14",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.2"
+  }
+}

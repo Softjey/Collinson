@@ -1,0 +1,15 @@
+allowBuilds:
+  '@prisma/engines': true
+  prisma: true
+  '@apollo/protobufjs': false
+  '@parcel/watcher': false
+  cpu-features: false
+  protobufjs: false
+  ssh2: false
+  unrs-resolver: false
+minimumReleaseAgeExclude:
+  - '@typescript-eslint/eslint-plugin@8.71.2'
+  - '@typescript-eslint/parser@8.71.2'
+  - '@typescript-eslint/type-utils@8.71.2'
+  - '@typescript-eslint/utils@8.71.2'
+  - typescript-eslint@8.71.2
