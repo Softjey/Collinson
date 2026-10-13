@@ -1,6 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { GraphQLError } from 'graphql';
-import { formatGraphQLError } from './error-formatter.js';
+import { formatGraphQLError } from '.././error-formatter.js';
 
 function formatted(extensions: Record<string, unknown>, message = 'boom') {
   return { message, extensions };
