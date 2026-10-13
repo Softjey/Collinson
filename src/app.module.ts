@@ -10,7 +10,7 @@ import { SearchModule } from './search/search.module.js';
 import { ConfigModule } from './shared/config/config.module.js';
 import { DatabaseModule } from './shared/database/database.module.js';
 import { formatGraphQLError } from './shared/graphql/error-formatter.js';
-import { ScalarsModule } from './shared/graphql/scalars.module.js';
+import { ScalarsModule } from './shared/graphql/scalars/scalars.module.js';
 import { OpenMeteoModule } from './shared/open-meteo/open-meteo.module.js';
 import { WeatherModule } from './weather/weather.module.js';
 
