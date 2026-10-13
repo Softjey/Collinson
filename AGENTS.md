@@ -11,6 +11,8 @@ Backend service (Node.js + GraphQL) that ranks the next 7 days for skiing, surfi
 - Everything in the repo (code, docs, comments, commits) is written in English.
 - Commit messages follow Conventional Commits.
 - Commit directly to `main`. Do not create feature branches.
+- When working on a ticket, commit on your own, step by step, as each step is finished. Do not wait to be asked
+  and do not save everything for one commit at the end.
 - Keep comments in code to a minimum. Do not comment what the code already says; add a comment only to explain a non-obvious reason. Prefer clear names over comments.
 
 ## Testing
