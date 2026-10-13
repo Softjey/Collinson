@@ -13,6 +13,11 @@ Backend service (Node.js + GraphQL) that ranks the next 7 days for skiing, surfi
 - Commit directly to `main`. Do not create feature branches.
 - Keep comments in code to a minimum. Do not comment what the code already says; add a comment only to explain a non-obvious reason. Prefer clear names over comments.
 
+## Testing
+
+- Work follows TDD: before implementing a ticket, write the tests first, then write the implementation that makes them pass.
+- Cover both positive and negative cases.
+
 ## Decisions and assumptions
 
 - Do not invent assumptions or decisions on your own, and do not record them in [DECISIONS.md](DECISIONS.md) until the user has confirmed them.
