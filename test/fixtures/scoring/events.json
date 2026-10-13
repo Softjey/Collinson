@@ -1,0 +1,98 @@
+[
+  {
+    "place": "hong-kong",
+    "date": "2023-09-01",
+    "features": {
+      "tMax": 25.4,
+      "rhMean": 92.42,
+      "precip": 61.3,
+      "rain": 61.3,
+      "snowfallSum": 0,
+      "snowDepthMax": 0,
+      "snowHours": 0,
+      "cloud": 99.92,
+      "windMean": 30.76,
+      "windMax": 63.5
+    }
+  },
+  {
+    "place": "hong-kong",
+    "date": "2023-09-02",
+    "features": {
+      "tMax": 27.4,
+      "rhMean": 93.17,
+      "precip": 68.2,
+      "rain": 68.2,
+      "snowfallSum": 0,
+      "snowDepthMax": 0,
+      "snowHours": 0,
+      "cloud": 86.58,
+      "windMean": 30.45,
+      "windMax": 51.1
+    }
+  },
+  {
+    "place": "london",
+    "date": "2022-02-18",
+    "features": {
+      "tMax": 11.3,
+      "rhMean": 71.21,
+      "precip": 2.6,
+      "rain": 2.6,
+      "snowfallSum": 0,
+      "snowDepthMax": 0,
+      "snowHours": 0,
+      "cloud": 64.04,
+      "windMean": 36.72,
+      "windMax": 68
+    }
+  },
+  {
+    "place": "beaver-creek",
+    "date": "2022-12-02",
+    "features": {
+      "tMax": 1.2,
+      "rhMean": 71.33,
+      "precip": 9.7,
+      "rain": 0.1,
+      "snowfallSum": 6.72,
+      "snowDepthMax": 0.32,
+      "snowHours": 15,
+      "cloud": 81.25,
+      "windMean": 11.13,
+      "windMax": 20.9
+    }
+  },
+  {
+    "place": "beaver-creek",
+    "date": "2023-12-01",
+    "features": {
+      "tMax": -3.1,
+      "rhMean": 81.17,
+      "precip": 2.9,
+      "rain": 0,
+      "snowfallSum": 2.03,
+      "snowDepthMax": 0.11,
+      "snowHours": 16,
+      "cloud": 95.67,
+      "windMean": 4.48,
+      "windMax": 11.9
+    }
+  },
+  {
+    "place": "beaver-creek",
+    "date": "2023-12-02",
+    "features": {
+      "tMax": -6,
+      "rhMean": 73.04,
+      "precip": 6.3,
+      "rain": 0,
+      "snowfallSum": 4.41,
+      "snowDepthMax": 0.15,
+      "snowHours": 18,
+      "cloud": 89,
+      "windMean": 12.3,
+      "windMax": 19.2
+    }
+  }
+]
