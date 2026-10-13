@@ -1,4 +1,4 @@
-import { clamp, interpolate, stepLookup } from './math.js';
+import { clamp, interpolate, stepLookup } from '.././math.js';
 
 describe('clamp', () => {
   it('returns the value inside the range', () => {

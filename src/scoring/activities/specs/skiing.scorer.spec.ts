@@ -1,6 +1,6 @@
-import { loadEventFeatures } from '../../../test/fixtures/scoring/load.js';
-import { categorize } from '../category.js';
-import type { WeatherDayFeatures } from '../daily-features.js';
+import { loadEventFeatures } from '../../../../test/fixtures/scoring/load.js';
+import { categorize } from '../../category.js';
+import type { WeatherDayFeatures } from '../../daily-features.js';
 import {
   SkiingScorer,
   cloudUtility,
@@ -10,7 +10,7 @@ import {
   snowUtility,
   temperatureUtility,
   windUtility,
-} from './skiing.scorer.js';
+} from '.././skiing.scorer.js';
 
 const snowyDay: WeatherDayFeatures = {
   tMax: 3,

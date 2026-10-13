@@ -1,6 +1,6 @@
-import { loadEventFeatures } from '../../../test/fixtures/scoring/load.js';
-import { categorize } from '../category.js';
-import type { WeatherDayFeatures } from '../daily-features.js';
+import { loadEventFeatures } from '../../../../test/fixtures/scoring/load.js';
+import { categorize } from '../../category.js';
+import type { WeatherDayFeatures } from '../../daily-features.js';
 import {
   OutdoorSightseeingScorer,
   cloudRating,
@@ -10,7 +10,7 @@ import {
   precipitationRating,
   thermalComfortRating,
   windRating,
-} from './outdoor.scorer.js';
+} from '.././outdoor.scorer.js';
 
 const pleasantDay: WeatherDayFeatures = {
   tMax: 22,

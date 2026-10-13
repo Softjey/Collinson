@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
-import { ACTIVITIES } from './activity.js';
-import { ScorerRegistry } from './scorer.registry.js';
-import { ScoringModule } from './scoring.module.js';
+import { ACTIVITIES } from '.././activity.js';
+import { ScorerRegistry } from '.././scorer.registry.js';
+import { ScoringModule } from '.././scoring.module.js';
 
 describe('ScoringModule', () => {
   it('registers a scorer for every activity', async () => {

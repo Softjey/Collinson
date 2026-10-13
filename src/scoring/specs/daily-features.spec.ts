@@ -3,7 +3,7 @@ import {
   weatherDailyFeatures,
   type HourlyMarine,
   type HourlyWeather,
-} from './daily-features.js';
+} from '.././daily-features.js';
 
 const unix = (iso: string) => Date.parse(iso) / 1000;
 

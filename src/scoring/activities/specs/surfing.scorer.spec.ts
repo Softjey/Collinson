@@ -1,6 +1,6 @@
-import type { DayContext } from '../activity-scorer.js';
-import type { MarineDayFeatures, WeatherDayFeatures } from '../daily-features.js';
-import { SurfingScorer, waveHeightUtility, wavePeriodUtility, windUtility } from './surfing.scorer.js';
+import type { DayContext } from '../../activity-scorer.js';
+import type { MarineDayFeatures, WeatherDayFeatures } from '../../daily-features.js';
+import { SurfingScorer, waveHeightUtility, wavePeriodUtility, windUtility } from '.././surfing.scorer.js';
 
 const weather: WeatherDayFeatures = {
   tMax: 20,
