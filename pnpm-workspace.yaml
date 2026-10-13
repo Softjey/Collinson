@@ -7,9 +7,20 @@ allowBuilds:
   protobufjs: false
   ssh2: false
   unrs-resolver: false
+
+# Versions pinned on the day they were verified, newer than the default minimumReleaseAge.
 minimumReleaseAgeExclude:
+  - '@testcontainers/postgresql@12.2.1'
+  - testcontainers@12.2.1
+  - zod@4.6.7
+  - typescript-eslint@8.71.2
   - '@typescript-eslint/eslint-plugin@8.71.2'
   - '@typescript-eslint/parser@8.71.2'
   - '@typescript-eslint/type-utils@8.71.2'
   - '@typescript-eslint/utils@8.71.2'
-  - typescript-eslint@8.71.2
+  - '@typescript-eslint/project-service@8.71.2'
+  - '@typescript-eslint/scope-manager@8.71.2'
+  - '@typescript-eslint/tsconfig-utils@8.71.2'
+  - '@typescript-eslint/types@8.71.2'
+  - '@typescript-eslint/typescript-estree@8.71.2'
+  - '@typescript-eslint/visitor-keys@8.71.2'
