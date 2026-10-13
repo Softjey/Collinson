@@ -1,4 +1,4 @@
-import { searchKey } from './search-key.js';
+import { searchKey } from '.././search-key.js';
 
 describe('searchKey', () => {
   const base = { name: 'Zakopane', count: 10, language: 'en' };
