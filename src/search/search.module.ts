@@ -1,7 +1,12 @@
 import { Module } from '@nestjs/common';
+import { OpenMeteoModule } from '../shared/open-meteo/open-meteo.module.js';
+import { GeocodingClient } from './geocoding.client.js';
+import { PlaceRepository } from './place.repository.js';
 import { SearchResolver } from './search.resolver.js';
+import { SearchService } from './search.service.js';
 
 @Module({
-  providers: [SearchResolver],
+  imports: [OpenMeteoModule],
+  providers: [SearchResolver, SearchService, GeocodingClient, PlaceRepository],
 })
 export class SearchModule {}

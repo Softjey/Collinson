@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
+import { jest } from '@jest/globals';
 import { GraphQLSchemaHost } from '@nestjs/graphql';
 import { buildSchema, parse, print, printSchema, visit } from 'graphql';
 import request from 'supertest';
+import { PlaceRepository } from '../src/search/place.repository.js';
 import { createTestApp, type TestApp } from './support/app.js';
 
 const contract = readFileSync(new URL('../contracts/graphql/schema.graphql', import.meta.url), 'utf8');
@@ -111,8 +113,13 @@ describe('GraphQL API', () => {
 
   describe('error formatting', () => {
     it('hides the internals of an unexpected error', async () => {
+      const failure = jest
+        .spyOn(testApp.app.get(PlaceRepository), 'findSearch')
+        .mockRejectedValueOnce(new Error('connection string with secret'));
+
       const response = await post(SEARCH, { name: 'Rome', count: 5 });
 
+      failure.mockRestore();
       expect(response.body.errors[0].message).toBe('Internal server error');
       expect(response.body.errors[0].extensions).toEqual({ code: 'INTERNAL_SERVER_ERROR' });
     });

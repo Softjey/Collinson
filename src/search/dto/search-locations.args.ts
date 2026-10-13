@@ -1,6 +1,10 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
+
+const TWO_LETTERS = /^[A-Za-z]{2}$/;
 
 export class SearchLocationsArgs {
+  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
@@ -11,11 +15,12 @@ export class SearchLocationsArgs {
   @Max(100)
   count!: number;
 
+  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.toUpperCase() : value))
   @IsOptional()
-  @IsString()
+  @Matches(TWO_LETTERS)
   countryCode?: string | null;
 
   @IsString()
-  @IsNotEmpty()
+  @Matches(TWO_LETTERS)
   language!: string;
 }
