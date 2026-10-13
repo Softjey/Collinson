@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import { retry } from './retry.js';
+import { retry } from '.././retry.js';
 
 class TransientError extends Error {}
 
