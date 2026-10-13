@@ -70,7 +70,7 @@ export const SKIING_PARAMS = {
   windPolynomial: { c0: 104.37, c1: -6.78, c2: -0.19, c3: 0.01, divisor: 104.37 },
   kmhPerMs: 3.6,
   temperature: { c: 0.34, loc: 1.45, s: 4.6 },
-  cloud: { freeUpTo: 25, range: 75 },
+  cloudRange: 75,
   rainZeroAt: 3,
   fullDepthAt: 0.3,
 };
