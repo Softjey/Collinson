@@ -2,9 +2,9 @@ import { jest } from '@jest/globals';
 import type { AppConfig } from '../../shared/config/env.schema.js';
 import type { Clock } from '../../shared/clock.js';
 import type { GeocodingClient } from '../geocoding.client.js';
-import type { Place } from '../place.js';
-import type { PlaceRepository, StoredSearch } from '../place.repository.js';
-import { searchKey } from '../search-key.js';
+import type { Place } from '../entities/place.js';
+import type { PlaceRepository, StoredSearch } from '../repositories/place.repository.js';
+import { searchKey } from '../utils/search-key.js';
 import { SearchService } from '../search.service.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;

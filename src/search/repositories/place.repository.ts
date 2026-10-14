@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type { Place as PlaceRow } from '../generated/prisma/client.js';
-import { PrismaService } from '../shared/database/prisma.service.js';
-import type { Place } from './place.js';
-import type { SearchKey } from './search-key.js';
+import type { Place as PlaceRow } from '../../generated/prisma/client.js';
+import { PrismaService } from '../../shared/database/prisma.service.js';
+import type { Place } from '../entities/place.js';
+import type { SearchKey } from '../utils/search-key.js';
 
 export interface StoredSearch {
   fetchedAt: Date;

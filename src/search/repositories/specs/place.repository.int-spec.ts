@@ -1,9 +1,9 @@
-import { createTestPrisma, truncateAll } from '../../../test/support/database.js';
-import type { PrismaClient } from '../../generated/prisma/client.js';
-import type { PrismaService } from '../../shared/database/prisma.service.js';
-import type { Place } from '../place.js';
+import { createTestPrisma, truncateAll } from '../../../../test/support/database.js';
+import type { PrismaClient } from '../../../generated/prisma/client.js';
+import type { PrismaService } from '../../../shared/database/prisma.service.js';
+import type { Place } from '../../entities/place.js';
 import { PlaceRepository } from '../place.repository.js';
-import { searchKey } from '../search-key.js';
+import { searchKey } from '../../utils/search-key.js';
 
 function place(id: string, overrides: Partial<Place> = {}): Place {
   return {

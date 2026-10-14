@@ -3,7 +3,7 @@ import { jest } from '@jest/globals';
 import { GraphQLSchemaHost } from '@nestjs/graphql';
 import { buildSchema, parse, print, printSchema, visit } from 'graphql';
 import request from 'supertest';
-import { PlaceRepository } from '../src/search/place.repository.js';
+import { PlaceRepository } from '../src/search/repositories/place.repository.js';
 import { createTestApp, type TestApp } from './support/app.js';
 
 const contract = readFileSync(new URL('../contracts/graphql/schema.graphql', import.meta.url), 'utf8');

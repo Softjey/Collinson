@@ -4,10 +4,10 @@ import { Clock } from '../shared/clock.js';
 import { APP_CONFIG } from '../shared/config/config.module.js';
 import type { AppConfig } from '../shared/config/env.schema.js';
 import { GeocodingClient } from './geocoding.client.js';
-import type { Place } from './place.js';
-import { PlaceRepository, type StoredSearch } from './place.repository.js';
-import { searchKey } from './search-key.js';
-import type { SearchLocationsArgs } from './search-locations.args.js';
+import type { Place } from './entities/place.js';
+import { PlaceRepository, type StoredSearch } from './repositories/place.repository.js';
+import { searchKey } from './utils/search-key.js';
+import type { SearchLocationsArgs } from './entities/search-locations.args.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -46,6 +46,8 @@ export class SearchService {
   }
 
   private isFresh(stored: StoredSearch): boolean {
-    return this.clock.now().getTime() - stored.fetchedAt.getTime() < this.config.placeSearchCacheDays * DAY_MS;
+    return (
+      this.clock.now().getTime() - stored.fetchedAt.getTime() < this.config.placeSearchCacheDays * DAY_MS
+    );
   }
 }

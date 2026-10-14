@@ -1,4 +1,4 @@
-import type { SearchLocationsArgs } from './search-locations.args.js';
+import type { SearchLocationsArgs } from '../entities/search-locations.args.js';
 
 export interface SearchKey {
   query: string;
