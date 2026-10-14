@@ -12,9 +12,15 @@ export type CurveSpec = { [K in keyof CurveKinds]: { kind: K } & CurveKinds[K] }
 type CurveFunction = (x: number) => number;
 
 const CURVE_KINDS: { [K in keyof CurveKinds]: (params: CurveKinds[K]) => CurveFunction } = {
-  piecewise: ({ anchors }) => (x) => interpolate(anchors, x),
+  piecewise:
+    ({ anchors }) =>
+    (x) =>
+      interpolate(anchors, x),
 
-  steps: ({ steps }) => (x) => stepLookup(steps, x),
+  steps:
+    ({ steps }) =>
+    (x) =>
+      stepLookup(steps, x),
 
   polynomial:
     ({ coefficients, divisor, zeroAbove }) =>

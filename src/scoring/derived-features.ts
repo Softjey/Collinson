@@ -21,9 +21,7 @@ const DERIVED_KINDS: { [K in keyof DerivedKinds]: (inputs: number[], params: Der
 };
 
 export function computeDerived(spec: DerivedSpec, features: FeatureValues): number | null {
-  const compute = DERIVED_KINDS[spec.kind] as
-    | ((inputs: number[], params: DerivedSpec) => number)
-    | undefined;
+  const compute = DERIVED_KINDS[spec.kind] as ((inputs: number[], params: DerivedSpec) => number) | undefined;
   if (!compute) throw new Error(`Unknown derived feature kind ${spec.kind}`);
 
   const inputs: number[] = [];
