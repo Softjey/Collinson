@@ -1,6 +1,6 @@
-import type { Activity } from './activity.js';
-import { ACTIVITY_DEFINITIONS } from './activity-definitions.js';
-import type { ActivityDefinition, DataSource } from './definition.types.js';
+import type { Activity } from '../entities/activity.js';
+import { ACTIVITY_DEFINITIONS } from '../entities/activity-definitions.js';
+import type { ActivityDefinition, DataSource } from '../entities/definition.types.js';
 
 export function findDefinition(
   activity: Activity,

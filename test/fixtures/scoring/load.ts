@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { WeatherDayFeatures } from '../../../src/scoring/daily-features.js';
+import type { WeatherDayFeatures } from '../../../src/scoring/utils/daily-features.js';
 
 interface DatedEvent {
   place: string;

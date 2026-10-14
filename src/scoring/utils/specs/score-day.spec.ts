@@ -1,4 +1,4 @@
-import type { ActivityDefinition, DayContext, FormulaDefinition } from '../definition.types.js';
+import type { ActivityDefinition, DayContext, FormulaDefinition } from '../../entities/definition.types.js';
 import { scoreDay } from '../score-day.js';
 
 const day = (weather: Record<string, number | null>, marine: DayContext['marine'] = null): DayContext => ({

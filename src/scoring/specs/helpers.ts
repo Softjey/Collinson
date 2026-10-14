@@ -1,7 +1,7 @@
-import { compileCurve } from '../curves.js';
-import type { ActivityDefinition, DayContext, FormulaDefinition } from '../definition.types.js';
-import type { WeatherDayFeatures } from '../daily-features.js';
-import { scoreDay } from '../score-day.js';
+import { compileCurve } from '../utils/curves.js';
+import type { ActivityDefinition, DayContext, FormulaDefinition } from '../entities/definition.types.js';
+import type { WeatherDayFeatures } from '../utils/daily-features.js';
+import { scoreDay } from '../utils/score-day.js';
 
 export const NO_WEATHER: DayContext = { weather: null, marine: null };
 

@@ -1,5 +1,5 @@
-import { ACTIVITIES } from '../activity.js';
-import { INDOOR_SIGHTSEEING, SKIING } from '../activity-definitions.js';
+import { ACTIVITIES } from '../../entities/activity.js';
+import { INDOOR_SIGHTSEEING, SKIING } from '../../entities/activity-definitions.js';
 import { findDefinition, requiredSources } from '../definition-lookup.js';
 
 describe('findDefinition', () => {

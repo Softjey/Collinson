@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type { Activity } from './activity.js';
-import { findDefinition, requiredSources } from './definition-lookup.js';
-import type { DataSource, DayContext, DayOutcome } from './definition.types.js';
-import { scoreDay } from './score-day.js';
+import type { Activity } from './entities/activity.js';
+import { findDefinition, requiredSources } from './utils/definition-lookup.js';
+import type { DataSource, DayContext, DayOutcome } from './entities/definition.types.js';
+import { scoreDay } from './utils/score-day.js';
 
 export interface ActivityOutcome {
   activity: Activity;

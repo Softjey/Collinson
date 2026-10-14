@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
-import { ACTIVITIES } from '../activity.js';
-import type { DayContext } from '../definition.types.js';
+import { ACTIVITIES } from '../entities/activity.js';
+import type { DayContext } from '../entities/definition.types.js';
 import { ScoringModule } from '../scoring.module.js';
 import { ScoringService } from '../scoring.service.js';
 

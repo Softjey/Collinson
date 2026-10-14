@@ -1,5 +1,5 @@
 import type { ActivityDefinition, FormulaDefinition, InvertedDefinition } from './definition.types.js';
-import type { Step } from './math.js';
+import type { Step } from '../utils/math.js';
 
 const steps = (...pairs: [from: number, value: number][]): { kind: 'steps'; steps: Step<number>[] } => ({
   kind: 'steps',

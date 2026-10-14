@@ -1,4 +1,4 @@
-import { categorize } from '.././category.js';
+import { categorize } from '../category.js';
 
 describe('categorize', () => {
   it.each([

@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
-import { APP_CONFIG, ConfigModule } from '.././config.module.js';
-import type { AppConfig } from '.././env.schema.js';
+import { APP_CONFIG, ConfigModule } from '../config.module.js';
+import type { AppConfig } from '../env.schema.js';
 
 describe('ConfigModule', () => {
   const original = { ...process.env };

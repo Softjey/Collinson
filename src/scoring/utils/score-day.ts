@@ -6,7 +6,7 @@ import type {
   Condition,
   DayOutcome,
   FormulaDefinition,
-} from './definition.types.js';
+} from '../entities/definition.types.js';
 import { computeDerived, type FeatureValues } from './derived-features.js';
 
 const scored = (score: number): DayOutcome => ({ kind: 'scored', score });

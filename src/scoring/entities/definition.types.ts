@@ -1,8 +1,8 @@
 import type { Activity } from './activity.js';
-import type { CurveSpec } from './curves.js';
-import type { MarineDayFeatures, WeatherDayFeatures } from './daily-features.js';
-import type { CombinerSpec } from './combiners.js';
-import type { DerivedSpec } from './derived-features.js';
+import type { CurveSpec } from '../utils/curves.js';
+import type { MarineDayFeatures, WeatherDayFeatures } from '../utils/daily-features.js';
+import type { CombinerSpec } from '../utils/combiners.js';
+import type { DerivedSpec } from '../utils/derived-features.js';
 
 export type DataSource = 'WEATHER' | 'WAVES';
 

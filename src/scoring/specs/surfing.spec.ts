@@ -1,7 +1,7 @@
-import { SURFING } from '../activity-definitions.js';
-import type { MarineDayFeatures, WeatherDayFeatures } from '../daily-features.js';
-import type { DayContext } from '../definition.types.js';
-import { scoreDay } from '../score-day.js';
+import { SURFING } from '../entities/activity-definitions.js';
+import type { MarineDayFeatures, WeatherDayFeatures } from '../utils/daily-features.js';
+import type { DayContext } from '../entities/definition.types.js';
+import { scoreDay } from '../utils/score-day.js';
 import { curveOf } from './helpers.js';
 
 const weather: WeatherDayFeatures = {

@@ -1,5 +1,5 @@
 import { Kind } from 'graphql';
-import { DateTimeScalar } from '.././date-time.scalar.js';
+import { DateTimeScalar } from '../date-time.scalar.js';
 
 describe('DateTime scalar', () => {
   const scalar = new DateTimeScalar();
