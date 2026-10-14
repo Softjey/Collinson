@@ -1,5 +1,5 @@
 import { Args, Query, Resolver } from '@nestjs/graphql';
-import { SearchLocationsArgs } from './dto/search-locations.args.js';
+import { SearchLocationsArgs } from './search-locations.args.js';
 import type { Place } from './place.js';
 import { SearchService } from './search.service.js';
 
