@@ -3,9 +3,9 @@ import {
   OpenMeteoRateLimitedError,
   OpenMeteoUnavailableError,
 } from '../shared/open-meteo/open-meteo.errors.js';
-import type { Clock } from './clock.js';
+import type { Clock } from '../shared/clock.js';
 import { decideAfterFailure, isReusable } from './freshness.policy.js';
-import { SingleFlight } from './single-flight.js';
+import { SingleFlight } from '../shared/single-flight.js';
 import type {
   ForecastData,
   LocalDate,

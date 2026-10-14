@@ -4,7 +4,7 @@ import {
   OpenMeteoRateLimitedError,
   OpenMeteoUnavailableError,
 } from '../../shared/open-meteo/open-meteo.errors.js';
-import type { Clock } from '.././clock.js';
+import type { Clock } from '../../shared/clock.js';
 import type {
   ForecastData,
   LocationRef,
