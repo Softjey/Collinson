@@ -1,36 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { z } from 'zod';
 import { OpenMeteoService } from '../shared/open-meteo/open-meteo.service.js';
 import type { Place } from './entities/place.js';
 import type { SearchLocationsArgs } from './entities/search-locations.args.js';
-
-const resultSchema = z.object({
-  id: z.number().int(),
-  name: z.string(),
-  latitude: z.number(),
-  longitude: z.number(),
-  elevation: z.number().nullish(),
-  country: z.string().nullish(),
-  country_code: z.string().nullish(),
-  admin1: z.string().nullish(),
-  timezone: z.string().nullish(),
-  population: z.number().int().nullish(),
-});
-
-const responseSchema = z.object({ results: z.array(resultSchema).optional() });
 
 @Injectable()
 export class GeocodingClient {
   constructor(private readonly openMeteo: OpenMeteoService) {}
 
   async search({ name, count, language, countryCode }: SearchLocationsArgs): Promise<Place[]> {
-    const body = await this.openMeteo.geocoding({
+    const { results } = await this.openMeteo.geocoding({
       name,
       count,
       language,
       countryCode: countryCode ?? undefined,
     });
-    const { results = [] } = responseSchema.parse(body);
 
     return results.map((result) => ({
       id: String(result.id),
