@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { z } from 'zod';
 import { OpenMeteoService } from '../shared/open-meteo/open-meteo.service.js';
-import { fromE2, hasEqualLengths, parseResponse, unixToDate } from './utils/parse-response.js';
+import type { MarineResponse } from '../shared/open-meteo/schemas/marine.schema.js';
+import { fromE2, unixToDate } from './utils/convert.js';
 import type { LocationRef, MarineData } from './entities/weather.types.js';
 
 // Bump when the mapping from the Marine response to stored columns changes (new or renamed variable,
@@ -16,29 +16,12 @@ const HOURLY_VARIABLES = [
   'swell_wave_period',
 ] as const;
 
-const hours = z.array(z.number().nullable());
-
-const marineResponse = z.object({
-  latitude: z.number(),
-  longitude: z.number(),
-  hourly: z
-    .object({
-      time: z.array(z.number().int()).min(1),
-      wave_height: hours,
-      wave_period: hours,
-      wave_direction: hours,
-      swell_wave_height: hours,
-      swell_wave_period: hours,
-    })
-    .refine(hasEqualLengths, { message: 'hourly arrays must have the same length' }),
-});
-
 @Injectable()
 export class MarineClient {
   constructor(private readonly openMeteo: OpenMeteoService) {}
 
   async fetch(location: Pick<LocationRef, 'latE2' | 'lonE2' | 'timezone'>): Promise<MarineData> {
-    const body = await this.openMeteo.marine({
+    const response = await this.openMeteo.marine({
       latitude: fromE2(location.latE2),
       longitude: fromE2(location.lonE2),
       forecast_days: 8,
@@ -47,11 +30,11 @@ export class MarineClient {
       cell_selection: 'sea',
       hourly: HOURLY_VARIABLES.join(','),
     });
-    return toMarineData(parseResponse(marineResponse, body));
+    return toMarineData(response);
   }
 }
 
-function toMarineData(response: z.output<typeof marineResponse>): MarineData {
+function toMarineData(response: MarineResponse): MarineData {
   const { hourly } = response;
   const hasSea = hourly.wave_height.some((value) => value !== null);
   return {

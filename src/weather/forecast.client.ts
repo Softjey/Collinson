@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { z } from 'zod';
 import { OpenMeteoService } from '../shared/open-meteo/open-meteo.service.js';
-import { fromE2, hasEqualLengths, parseResponse, unixToDate } from './utils/parse-response.js';
+import type { ForecastResponse } from '../shared/open-meteo/schemas/forecast.schema.js';
+import { fromE2, unixToDate } from './utils/convert.js';
 import type { ForecastData, LocationRef } from './entities/weather.types.js';
 
 // Bump when the mapping from the Forecast response to stored columns changes (new or renamed variable,
@@ -21,36 +21,12 @@ const HOURLY_VARIABLES = [
   'weather_code',
 ] as const;
 
-const hours = z.array(z.number().nullable());
-
-const forecastResponse = z.object({
-  latitude: z.number(),
-  longitude: z.number(),
-  elevation: z.number().nullish(),
-  utc_offset_seconds: z.number().int(),
-  hourly: z
-    .object({
-      time: z.array(z.number().int()),
-      temperature_2m: hours,
-      relative_humidity_2m: hours,
-      precipitation: hours,
-      rain: hours,
-      snowfall: hours,
-      snow_depth: hours,
-      cloud_cover: hours,
-      wind_speed_10m: hours,
-      wind_gusts_10m: hours,
-      weather_code: hours,
-    })
-    .refine(hasEqualLengths, { message: 'hourly arrays must have the same length' }),
-});
-
 @Injectable()
 export class ForecastClient {
   constructor(private readonly openMeteo: OpenMeteoService) {}
 
   async fetch(location: Pick<LocationRef, 'latE2' | 'lonE2' | 'timezone'>): Promise<ForecastData> {
-    const body = await this.openMeteo.forecast({
+    const response = await this.openMeteo.forecast({
       latitude: fromE2(location.latE2),
       longitude: fromE2(location.lonE2),
       forecast_days: 8,
@@ -58,11 +34,11 @@ export class ForecastClient {
       timeformat: 'unixtime',
       hourly: HOURLY_VARIABLES.join(','),
     });
-    return toForecastData(parseResponse(forecastResponse, body));
+    return toForecastData(response);
   }
 }
 
-function toForecastData(response: z.output<typeof forecastResponse>): ForecastData {
+function toForecastData(response: ForecastResponse): ForecastData {
   const { hourly } = response;
   return {
     apiLatitude: response.latitude,

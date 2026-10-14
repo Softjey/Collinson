@@ -93,42 +93,6 @@ describe('MarineClient', () => {
     expect(data.hours).toHaveLength(192);
   });
 
-  describe('malformed responses', () => {
-    it('rejects a response without hourly', async () => {
-      const response = fixture('marine-barcelona');
-      delete (response as Record<string, unknown>).hourly;
-      const { client } = clientReturning(response);
-
-      await expect(client.fetch(location)).rejects.toBeInstanceOf(OpenMeteoUnavailableError);
-    });
-
-    it('rejects arrays of different lengths', async () => {
-      const response = fixture('marine-barcelona');
-      response.hourly.swell_wave_period = (response.hourly.swell_wave_period ?? []).slice(0, 5);
-      const { client } = clientReturning(response);
-
-      await expect(client.fetch(location)).rejects.toBeInstanceOf(OpenMeteoUnavailableError);
-    });
-
-    it('rejects wrong value types', async () => {
-      const response = fixture('marine-barcelona');
-      response.hourly.wave_height = (response.hourly.wave_height ?? []).map((_, i) => (i === 0 ? '1.2' : 1));
-      const { client } = clientReturning(response);
-
-      await expect(client.fetch(location)).rejects.toBeInstanceOf(OpenMeteoUnavailableError);
-    });
-
-    it('rejects empty arrays rather than reading them as no sea', async () => {
-      const response = fixture('marine-barcelona');
-      for (const key of Object.keys(response.hourly)) {
-        response.hourly[key] = [];
-      }
-      const { client } = clientReturning(response);
-
-      await expect(client.fetch(location)).rejects.toBeInstanceOf(OpenMeteoUnavailableError);
-    });
-  });
-
   describe('HTTP client errors', () => {
     it.each([
       ['rate limited', new OpenMeteoRateLimitedError()],

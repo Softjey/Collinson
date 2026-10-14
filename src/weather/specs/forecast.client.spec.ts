@@ -94,40 +94,6 @@ describe('ForecastClient', () => {
     await expect(client.fetch(location)).resolves.toMatchObject({ elevationM: null });
   });
 
-  describe('malformed responses', () => {
-    it('rejects a response without hourly', async () => {
-      const response = fixture();
-      delete (response as Record<string, unknown>).hourly;
-      const { client } = clientReturning(response);
-
-      await expect(client.fetch(location)).rejects.toBeInstanceOf(OpenMeteoUnavailableError);
-    });
-
-    it('rejects arrays of different lengths', async () => {
-      const response = fixture();
-      response.hourly.rain = (response.hourly.rain ?? []).slice(0, 100);
-      const { client } = clientReturning(response);
-
-      await expect(client.fetch(location)).rejects.toBeInstanceOf(OpenMeteoUnavailableError);
-    });
-
-    it('rejects wrong value types', async () => {
-      const response = fixture();
-      response.hourly.temperature_2m = (response.hourly.temperature_2m ?? []).map((_, i) =>
-        i === 3 ? 'warm' : 1,
-      );
-      const { client } = clientReturning(response);
-
-      await expect(client.fetch(location)).rejects.toBeInstanceOf(OpenMeteoUnavailableError);
-    });
-
-    it('rejects a body that is not an object', async () => {
-      const { client } = clientReturning('<html>');
-
-      await expect(client.fetch(location)).rejects.toBeInstanceOf(OpenMeteoUnavailableError);
-    });
-  });
-
   describe('HTTP client errors', () => {
     it.each([
       ['rate limited', new OpenMeteoRateLimitedError()],
