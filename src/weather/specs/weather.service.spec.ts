@@ -12,6 +12,11 @@ import type {
   SourceResult,
   StoredSnapshot,
 } from '.././weather.types.js';
+import type { ForecastClient } from '.././forecast.client.js';
+import type { ForecastSnapshotRepository } from '.././forecast-snapshot.repository.js';
+import type { LocationRepository } from '.././location.repository.js';
+import type { MarineClient } from '.././marine.client.js';
+import type { MarineSnapshotRepository } from '.././marine-snapshot.repository.js';
 import { WeatherService } from '.././weather.service.js';
 
 const HOUR = 3_600_000;
@@ -73,15 +78,15 @@ function setup(
   const locations = {
     findOrCreate: jest.fn(async (input: Omit<LocationRef, 'id'>) => ({ id: 1, ...input })),
   };
-  const service = new WeatherService({
+  const service = new WeatherService(
     clock,
-    locations,
-    forecastClient,
-    marineClient,
-    forecastSnapshots,
-    marineSnapshots,
-    settings: { forecastRefreshHours: 6, marineRefreshHours: 24, maxStaleHours: 48 },
-  });
+    { weatherRefreshHours: 6, wavesRefreshHours: 24, maxStaleHours: 48 },
+    locations as unknown as LocationRepository,
+    forecastClient as unknown as ForecastClient,
+    marineClient as unknown as MarineClient,
+    forecastSnapshots as unknown as ForecastSnapshotRepository,
+    marineSnapshots as unknown as MarineSnapshotRepository,
+  );
   return { service, forecastSnapshots, marineSnapshots, forecastClient, marineClient, locations };
 }
 

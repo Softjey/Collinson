@@ -1,10 +1,18 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { Clock } from '../shared/clock.js';
+import { APP_CONFIG } from '../shared/config/config.module.js';
+import type { AppConfig } from '../shared/config/env.schema.js';
 import {
   OpenMeteoBadRequestError,
   OpenMeteoRateLimitedError,
   OpenMeteoUnavailableError,
 } from '../shared/open-meteo/open-meteo.errors.js';
-import type { Clock } from '../shared/clock.js';
+import { ForecastClient } from './forecast.client.js';
+import { ForecastSnapshotRepository } from './forecast-snapshot.repository.js';
 import { decideAfterFailure, isReusable } from './freshness.policy.js';
+import { LocationRepository } from './location.repository.js';
+import { MarineClient } from './marine.client.js';
+import { MarineSnapshotRepository } from './marine-snapshot.repository.js';
 import { SingleFlight } from '../shared/single-flight.js';
 import type {
   ForecastData,
@@ -15,12 +23,6 @@ import type {
   SourceResult,
   StoredSnapshot,
 } from './weather.types.js';
-
-export interface WeatherSettings {
-  forecastRefreshHours: number;
-  marineRefreshHours: number;
-  maxStaleHours: number;
-}
 
 interface SnapshotStore<T> {
   findLatest(locationId: number): Promise<StoredSnapshot<T> | null>;
@@ -35,40 +37,41 @@ interface Source<T> {
   requiresCoverage(data: T): boolean;
 }
 
-export interface WeatherServiceDependencies {
-  clock: Clock;
-  settings: WeatherSettings;
-  locations: { findOrCreate(input: Omit<LocationRef, 'id'>): Promise<LocationRef> };
-  forecastClient: { fetch(location: LocationRef): Promise<ForecastData> };
-  marineClient: { fetch(location: LocationRef): Promise<MarineData> };
-  forecastSnapshots: SnapshotStore<ForecastData>;
-  marineSnapshots: SnapshotStore<MarineData>;
-}
+type WeatherSettings = Pick<AppConfig, 'weatherRefreshHours' | 'wavesRefreshHours' | 'maxStaleHours'>;
 
+@Injectable()
 export class WeatherService {
   private readonly flights = new SingleFlight();
   private readonly forecast: Source<ForecastData>;
   private readonly marine: Source<MarineData>;
 
-  constructor(private readonly deps: WeatherServiceDependencies) {
+  constructor(
+    private readonly clock: Clock,
+    @Inject(APP_CONFIG) private readonly settings: WeatherSettings,
+    private readonly locations: LocationRepository,
+    forecastClient: ForecastClient,
+    marineClient: MarineClient,
+    forecastSnapshots: ForecastSnapshotRepository,
+    marineSnapshots: MarineSnapshotRepository,
+  ) {
     this.forecast = {
       name: 'forecast',
-      refreshHours: deps.settings.forecastRefreshHours,
-      store: deps.forecastSnapshots,
-      client: deps.forecastClient,
+      refreshHours: settings.weatherRefreshHours,
+      store: forecastSnapshots,
+      client: forecastClient,
       requiresCoverage: () => true,
     };
     this.marine = {
       name: 'marine',
-      refreshHours: deps.settings.marineRefreshHours,
-      store: deps.marineSnapshots,
-      client: deps.marineClient,
+      refreshHours: settings.wavesRefreshHours,
+      store: marineSnapshots,
+      client: marineClient,
       requiresCoverage: (data) => data.hasSea,
     };
   }
 
   resolveLocation(latitude: number, longitude: number, timezone: string): Promise<LocationRef> {
-    return this.deps.locations.findOrCreate({
+    return this.locations.findOrCreate({
       latE2: Math.round(latitude * 100),
       lonE2: Math.round(longitude * 100),
       timezone,
@@ -88,7 +91,7 @@ export class WeatherService {
     location: LocationRef,
     coverThrough: LocalDate,
   ): Promise<SourceResult<T>> {
-    const { clock, settings } = this.deps;
+    const { clock, settings } = this;
     const snapshot = await source.store.findLatest(location.id);
 
     if (
