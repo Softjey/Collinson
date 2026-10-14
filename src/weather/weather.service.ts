@@ -8,11 +8,11 @@ import {
   OpenMeteoUnavailableError,
 } from '../shared/open-meteo/open-meteo.errors.js';
 import { ForecastClient } from './forecast.client.js';
-import { ForecastRepository } from './forecast.repository.js';
-import { decideAfterFailure, isReusable } from './freshness.policy.js';
-import { LocationRepository } from './location.repository.js';
+import { ForecastRepository } from './repositories/forecast.repository.js';
+import { decideAfterFailure, isReusable } from './utils/freshness.policy.js';
+import { LocationRepository } from './repositories/location.repository.js';
 import { MarineClient } from './marine.client.js';
-import { MarineRepository } from './marine.repository.js';
+import { MarineRepository } from './repositories/marine.repository.js';
 import { SingleFlight } from '../shared/single-flight.js';
 import type {
   ForecastData,
@@ -22,7 +22,7 @@ import type {
   SourceFailureCause,
   SourceResult,
   StoredSnapshot,
-} from './weather.types.js';
+} from './entities/weather.types.js';
 
 interface SnapshotStore<T> {
   findLatest(locationId: number): Promise<StoredSnapshot<T> | null>;

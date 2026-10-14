@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { OpenMeteoUnavailableError } from '../shared/open-meteo/open-meteo.errors.js';
+import { OpenMeteoUnavailableError } from '../../shared/open-meteo/open-meteo.errors.js';
 
 export function parseResponse<T extends z.ZodType>(schema: T, body: unknown): z.output<T> {
   const result = schema.safeParse(body);

@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { PrismaClient } from '../generated/prisma/client.js';
-import { PrismaService } from '../shared/database/prisma.service.js';
-import { FORECAST_PARSER_VERSION } from './forecast.client.js';
-import type { ForecastData, StoredSnapshot } from './weather.types.js';
+import type { PrismaClient } from '../../generated/prisma/client.js';
+import { PrismaService } from '../../shared/database/prisma.service.js';
+import { FORECAST_PARSER_VERSION } from '../forecast.client.js';
+import type { ForecastData, StoredSnapshot } from '../entities/weather.types.js';
 
 @Injectable()
 export class ForecastRepository {

@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { PrismaClient } from '../generated/prisma/client.js';
-import { PrismaService } from '../shared/database/prisma.service.js';
-import type { LocationRef } from './weather.types.js';
+import type { PrismaClient } from '../../generated/prisma/client.js';
+import { PrismaService } from '../../shared/database/prisma.service.js';
+import type { LocationRef } from '../entities/weather.types.js';
 
 @Injectable()
 export class LocationRepository {

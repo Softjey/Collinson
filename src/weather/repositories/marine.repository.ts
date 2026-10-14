@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { PrismaClient } from '../generated/prisma/client.js';
-import { PrismaService } from '../shared/database/prisma.service.js';
-import { MARINE_PARSER_VERSION } from './marine.client.js';
-import type { MarineData, StoredSnapshot } from './weather.types.js';
+import type { PrismaClient } from '../../generated/prisma/client.js';
+import { PrismaService } from '../../shared/database/prisma.service.js';
+import { MARINE_PARSER_VERSION } from '../marine.client.js';
+import type { MarineData, StoredSnapshot } from '../entities/weather.types.js';
 
 @Injectable()
 export class MarineRepository {

@@ -6,7 +6,7 @@ import {
   OpenMeteoUnavailableError,
 } from '../../shared/open-meteo/open-meteo.errors.js';
 import type { OpenMeteoService } from '../../shared/open-meteo/open-meteo.service.js';
-import { MarineClient, MARINE_PARSER_VERSION } from '.././marine.client.js';
+import { MarineClient, MARINE_PARSER_VERSION } from '../marine.client.js';
 
 function fixture(name: string): Record<string, unknown> & { hourly: Record<string, unknown[]> } {
   const path = fileURLToPath(new URL(`../../../test/fixtures/weather/${name}.json`, import.meta.url));

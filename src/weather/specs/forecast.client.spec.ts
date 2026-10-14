@@ -6,7 +6,7 @@ import {
   OpenMeteoUnavailableError,
 } from '../../shared/open-meteo/open-meteo.errors.js';
 import type { OpenMeteoService } from '../../shared/open-meteo/open-meteo.service.js';
-import { ForecastClient, FORECAST_PARSER_VERSION } from '.././forecast.client.js';
+import { ForecastClient, FORECAST_PARSER_VERSION } from '../forecast.client.js';
 
 function fixture(): Record<string, unknown> & { hourly: Record<string, unknown[]> } {
   const path = fileURLToPath(

@@ -1,4 +1,4 @@
-import { decideAfterFailure, isReusable, localDateOf } from '.././freshness.policy.js';
+import { decideAfterFailure, isReusable, localDateOf } from '../freshness.policy.js';
 
 const HOUR = 3_600_000;
 const now = new Date('2026-10-13T12:00:00Z');

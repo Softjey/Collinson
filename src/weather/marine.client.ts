@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { OpenMeteoService } from '../shared/open-meteo/open-meteo.service.js';
-import { fromE2, hasEqualLengths, parseResponse, unixToDate } from './parse-response.js';
-import type { LocationRef, MarineData } from './weather.types.js';
+import { fromE2, hasEqualLengths, parseResponse, unixToDate } from './utils/parse-response.js';
+import type { LocationRef, MarineData } from './entities/weather.types.js';
 
 // Bump when the mapping from the Marine response to stored columns changes (new or renamed variable,
 // unit change, different rule for hasSea), so rows written by older logic can be told apart.

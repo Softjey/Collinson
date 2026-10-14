@@ -3,9 +3,9 @@ import { Test } from '@nestjs/testing';
 import { ConfigModule } from '../../shared/config/config.module.js';
 import { DatabaseModule } from '../../shared/database/database.module.js';
 import { PrismaService } from '../../shared/database/prisma.service.js';
-import { LocationRepository } from '.././location.repository.js';
-import { WeatherModule } from '.././weather.module.js';
-import { WeatherService } from '.././weather.service.js';
+import { LocationRepository } from '../repositories/location.repository.js';
+import { WeatherModule } from '../weather.module.js';
+import { WeatherService } from '../weather.service.js';
 
 @Module({ imports: [ConfigModule, DatabaseModule, WeatherModule] })
 class ConsumerModule {}

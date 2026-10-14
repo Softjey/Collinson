@@ -1,9 +1,9 @@
-import { createTestPrisma, truncateAll } from '../../../test/support/database.js';
-import type { PrismaClient } from '../../generated/prisma/client.js';
-import { ForecastRepository } from '.././forecast.repository.js';
-import { LocationRepository } from '.././location.repository.js';
-import { MarineRepository } from '.././marine.repository.js';
-import type { ForecastData, ForecastHour, MarineData, MarineHour } from '.././weather.types.js';
+import { createTestPrisma, truncateAll } from '../../../../test/support/database.js';
+import type { PrismaClient } from '../../../generated/prisma/client.js';
+import { ForecastRepository } from '../forecast.repository.js';
+import { LocationRepository } from '../location.repository.js';
+import { MarineRepository } from '../marine.repository.js';
+import type { ForecastData, ForecastHour, MarineData, MarineHour } from '../../entities/weather.types.js';
 
 const START = Date.UTC(2026, 9, 12, 22);
 

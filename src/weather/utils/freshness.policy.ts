@@ -1,4 +1,4 @@
-import type { LocalDate } from './weather.types.js';
+import type { LocalDate } from '../entities/weather.types.js';
 
 const HOUR_MS = 3_600_000;
 const FETCHED_DAYS_AHEAD = 7;

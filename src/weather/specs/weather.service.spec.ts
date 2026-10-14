@@ -11,13 +11,13 @@ import type {
   MarineData,
   SourceResult,
   StoredSnapshot,
-} from '.././weather.types.js';
-import type { ForecastClient } from '.././forecast.client.js';
-import type { ForecastRepository } from '.././forecast.repository.js';
-import type { LocationRepository } from '.././location.repository.js';
-import type { MarineClient } from '.././marine.client.js';
-import type { MarineRepository } from '.././marine.repository.js';
-import { WeatherService } from '.././weather.service.js';
+} from '../entities/weather.types.js';
+import type { ForecastClient } from '../forecast.client.js';
+import type { ForecastRepository } from '../repositories/forecast.repository.js';
+import type { LocationRepository } from '../repositories/location.repository.js';
+import type { MarineClient } from '../marine.client.js';
+import type { MarineRepository } from '../repositories/marine.repository.js';
+import { WeatherService } from '../weather.service.js';
 
 const HOUR = 3_600_000;
 const NOW = new Date('2026-10-13T12:00:00Z');

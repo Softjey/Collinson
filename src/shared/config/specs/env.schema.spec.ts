@@ -1,4 +1,4 @@
-import { parseEnv } from '.././env.schema.js';
+import { parseEnv } from '../env.schema.js';
 
 const minimal = { DATABASE_URL: 'postgresql://u:p@localhost:5432/db' };
 
