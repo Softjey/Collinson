@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { jest } from '@jest/globals';
 import type { OpenMeteoService } from '../../shared/open-meteo/open-meteo.service.js';
-import { GeocodingClient } from '.././geocoding.client.js';
+import { GeocodingClient } from '../geocoding.client.js';
 
 function fixture(name: string): unknown {
   return JSON.parse(readFileSync(new URL(`../../../test/fixtures/search/${name}`, import.meta.url), 'utf8'));
