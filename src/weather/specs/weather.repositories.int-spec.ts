@@ -1,14 +1,14 @@
 import { createTestPrisma, truncateAll } from '../../../test/support/database.js';
 import type { PrismaClient } from '../../generated/prisma/client.js';
-import { ForecastSnapshotRepository } from '.././forecast-snapshot.repository.js';
+import { ForecastRepository } from '.././forecast.repository.js';
 import { LocationRepository } from '.././location.repository.js';
-import { MarineSnapshotRepository } from '.././marine-snapshot.repository.js';
-import type { ForecastData, ForecastHourRow, MarineData, MarineHourRow } from '.././weather.types.js';
+import { MarineRepository } from '.././marine.repository.js';
+import type { ForecastData, ForecastHour, MarineData, MarineHour } from '.././weather.types.js';
 
 const START = Date.UTC(2026, 9, 12, 22);
 
 function forecastData(overrides: Partial<ForecastData> = {}, hourCount = 192): ForecastData {
-  const hours: ForecastHourRow[] = Array.from({ length: hourCount }, (_, i) => ({
+  const hours: ForecastHour[] = Array.from({ length: hourCount }, (_, i) => ({
     timeUtc: new Date(START + i * 3_600_000),
     temperature2m: i === 5 ? null : 15 + (i % 10),
     relativeHumidity2m: 60,
@@ -32,7 +32,7 @@ function forecastData(overrides: Partial<ForecastData> = {}, hourCount = 192): F
 }
 
 function marineData(overrides: Partial<MarineData> = {}): MarineData {
-  const hours: MarineHourRow[] = Array.from({ length: 24 }, (_, i) => ({
+  const hours: MarineHour[] = Array.from({ length: 24 }, (_, i) => ({
     timeUtc: new Date(START + i * 3_600_000),
     waveHeight: 1.25,
     wavePeriod: i === 2 ? null : 8,
@@ -48,14 +48,14 @@ const barcelona = { latE2: 4140, lonE2: 218, timezone: 'Europe/Madrid' };
 describe('weather repositories', () => {
   let prisma: PrismaClient;
   let locations: LocationRepository;
-  let forecasts: ForecastSnapshotRepository;
-  let marine: MarineSnapshotRepository;
+  let forecasts: ForecastRepository;
+  let marine: MarineRepository;
 
   beforeAll(() => {
     prisma = createTestPrisma();
     locations = new LocationRepository(prisma);
-    forecasts = new ForecastSnapshotRepository(prisma);
-    marine = new MarineSnapshotRepository(prisma);
+    forecasts = new ForecastRepository(prisma);
+    marine = new MarineRepository(prisma);
   });
 
   beforeEach(async () => {
@@ -126,7 +126,7 @@ describe('weather repositories', () => {
     });
   });
 
-  describe('ForecastSnapshotRepository', () => {
+  describe('ForecastRepository', () => {
     it('writes a snapshot with 192 hours and updates the location elevation', async () => {
       const location = await locations.findOrCreate(barcelona);
       const fetchedAt = new Date('2026-10-13T08:00:00Z');
@@ -225,7 +225,7 @@ describe('weather repositories', () => {
     });
   });
 
-  describe('MarineSnapshotRepository', () => {
+  describe('MarineRepository', () => {
     it('stores a coastal snapshot with its hours and reads it back', async () => {
       const location = await locations.findOrCreate(barcelona);
       const data = marineData();

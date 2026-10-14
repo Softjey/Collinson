@@ -5,7 +5,7 @@ import { MARINE_PARSER_VERSION } from './marine.client.js';
 import type { MarineData, StoredSnapshot } from './weather.types.js';
 
 @Injectable()
-export class MarineSnapshotRepository {
+export class MarineRepository {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaClient) {}
 
   async insert(locationId: number, data: MarineData, fetchedAt: Date): Promise<StoredSnapshot<MarineData>> {

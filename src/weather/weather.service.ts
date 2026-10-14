@@ -8,11 +8,11 @@ import {
   OpenMeteoUnavailableError,
 } from '../shared/open-meteo/open-meteo.errors.js';
 import { ForecastClient } from './forecast.client.js';
-import { ForecastSnapshotRepository } from './forecast-snapshot.repository.js';
+import { ForecastRepository } from './forecast.repository.js';
 import { decideAfterFailure, isReusable } from './freshness.policy.js';
 import { LocationRepository } from './location.repository.js';
 import { MarineClient } from './marine.client.js';
-import { MarineSnapshotRepository } from './marine-snapshot.repository.js';
+import { MarineRepository } from './marine.repository.js';
 import { SingleFlight } from '../shared/single-flight.js';
 import type {
   ForecastData,
@@ -51,8 +51,8 @@ export class WeatherService {
     private readonly locations: LocationRepository,
     forecastClient: ForecastClient,
     marineClient: MarineClient,
-    forecastSnapshots: ForecastSnapshotRepository,
-    marineSnapshots: MarineSnapshotRepository,
+    forecastSnapshots: ForecastRepository,
+    marineSnapshots: MarineRepository,
   ) {
     this.forecast = {
       name: 'forecast',

@@ -5,7 +5,7 @@ import { FORECAST_PARSER_VERSION } from './forecast.client.js';
 import type { ForecastData, StoredSnapshot } from './weather.types.js';
 
 @Injectable()
-export class ForecastSnapshotRepository {
+export class ForecastRepository {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaClient) {}
 
   async insert(

@@ -13,10 +13,10 @@ import type {
   StoredSnapshot,
 } from '.././weather.types.js';
 import type { ForecastClient } from '.././forecast.client.js';
-import type { ForecastSnapshotRepository } from '.././forecast-snapshot.repository.js';
+import type { ForecastRepository } from '.././forecast.repository.js';
 import type { LocationRepository } from '.././location.repository.js';
 import type { MarineClient } from '.././marine.client.js';
-import type { MarineSnapshotRepository } from '.././marine-snapshot.repository.js';
+import type { MarineRepository } from '.././marine.repository.js';
 import { WeatherService } from '.././weather.service.js';
 
 const HOUR = 3_600_000;
@@ -84,8 +84,8 @@ function setup(
     locations as unknown as LocationRepository,
     forecastClient as unknown as ForecastClient,
     marineClient as unknown as MarineClient,
-    forecastSnapshots as unknown as ForecastSnapshotRepository,
-    marineSnapshots as unknown as MarineSnapshotRepository,
+    forecastSnapshots as unknown as ForecastRepository,
+    marineSnapshots as unknown as MarineRepository,
   );
   return { service, forecastSnapshots, marineSnapshots, forecastClient, marineClient, locations };
 }

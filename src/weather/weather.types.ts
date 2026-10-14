@@ -7,7 +7,7 @@ export interface LocationRef {
   timezone: string;
 }
 
-export interface ForecastHourRow {
+export interface ForecastHour {
   timeUtc: Date;
   temperature2m: number | null;
   relativeHumidity2m: number | null;
@@ -26,10 +26,10 @@ export interface ForecastData {
   apiLongitude: number;
   elevationM: number | null;
   utcOffsetSeconds: number;
-  hours: ForecastHourRow[];
+  hours: ForecastHour[];
 }
 
-export interface MarineHourRow {
+export interface MarineHour {
   timeUtc: Date;
   waveHeight: number | null;
   wavePeriod: number | null;
@@ -42,7 +42,7 @@ export interface MarineData {
   hasSea: boolean;
   apiLatitude: number | null;
   apiLongitude: number | null;
-  hours: MarineHourRow[];
+  hours: MarineHour[];
 }
 
 export interface StoredSnapshot<T> {
