@@ -1,7 +1,7 @@
 import type { QueryParams } from '../../src/shared/open-meteo/open-meteo-http.client.js';
-import type { OpenMeteoApi } from '../../src/shared/open-meteo/open-meteo.service.js';
+import { OpenMeteoService } from '../../src/shared/open-meteo/open-meteo.service.js';
 
-export type Endpoint = keyof OpenMeteoApi;
+export type Endpoint = 'forecast' | 'marine' | 'geocoding';
 
 type Responder = (params: QueryParams) => unknown | Promise<unknown>;
 
@@ -11,12 +11,17 @@ export interface RecordedCall {
 }
 
 /**
- * Scripted stand-in for OpenMeteoService: the only seam e2e tests replace.
- * A response is a value, or a function that returns a value or throws.
+ * OpenMeteoService with scripted HTTP endpoints: the only seam e2e tests replace, so response
+ * validation still runs. A response is a value, or a function that returns a value or throws.
  */
-export class FakeOpenMeteo implements OpenMeteoApi {
+export class FakeOpenMeteo extends OpenMeteoService {
   readonly calls: RecordedCall[] = [];
   private readonly responders = new Map<Endpoint, Responder>();
+
+  constructor() {
+    const endpoint = (name: Endpoint) => ({ get: (params: QueryParams) => this.call(name, params) });
+    super({ forecast: endpoint('forecast'), marine: endpoint('marine'), geocoding: endpoint('geocoding') });
+  }
 
   respond(endpoint: Endpoint, response: unknown | Responder): this {
     this.responders.set(endpoint, typeof response === 'function' ? (response as Responder) : () => response);
@@ -26,18 +31,6 @@ export class FakeOpenMeteo implements OpenMeteoApi {
   reset(): void {
     this.calls.length = 0;
     this.responders.clear();
-  }
-
-  forecast(params: QueryParams): Promise<unknown> {
-    return this.call('forecast', params);
-  }
-
-  marine(params: QueryParams): Promise<unknown> {
-    return this.call('marine', params);
-  }
-
-  geocoding(params: QueryParams): Promise<unknown> {
-    return this.call('geocoding', params);
   }
 
   private async call(endpoint: Endpoint, params: QueryParams): Promise<unknown> {
