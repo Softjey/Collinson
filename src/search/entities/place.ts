@@ -1,5 +1,5 @@
-export interface Place {
-  id: string;
+export type Place = {
+  id: number;
   name: string;
   country: string | null;
   countryCode: string | null;
@@ -9,4 +9,4 @@ export interface Place {
   elevation: number | null;
   timezone: string | null;
   population: number | null;
-}
+};

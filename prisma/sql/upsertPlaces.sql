@@ -1,5 +1,5 @@
-INSERT INTO "Place" ("id", "name", "country", "countryCode", "admin1", "latitude", "longitude", "elevationM", "timezone", "population", "updatedAt")
-SELECT "id", "name", "country", "countryCode", "admin1", "latitude", "longitude", "elevationM", "timezone", "population", now()
+INSERT INTO "Place" ("id", "name", "country", "countryCode", "admin1", "latitude", "longitude", "elevation", "timezone", "population", "updatedAt")
+SELECT "id", "name", "country", "countryCode", "admin1", "latitude", "longitude", "elevation", "timezone", "population", now()
 FROM jsonb_to_recordset($1::jsonb -> 'rows') AS "rows"(
   "id" integer,
   "name" text,
@@ -8,7 +8,7 @@ FROM jsonb_to_recordset($1::jsonb -> 'rows') AS "rows"(
   "admin1" text,
   "latitude" double precision,
   "longitude" double precision,
-  "elevationM" real,
+  "elevation" real,
   "timezone" text,
   "population" integer
 )
@@ -19,7 +19,7 @@ ON CONFLICT ("id") DO UPDATE SET
   "admin1" = EXCLUDED."admin1",
   "latitude" = EXCLUDED."latitude",
   "longitude" = EXCLUDED."longitude",
-  "elevationM" = EXCLUDED."elevationM",
+  "elevation" = EXCLUDED."elevation",
   "timezone" = EXCLUDED."timezone",
   "population" = EXCLUDED."population",
   "updatedAt" = now()

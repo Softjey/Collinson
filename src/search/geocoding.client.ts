@@ -8,24 +8,7 @@ export class GeocodingClient {
   constructor(private readonly openMeteo: OpenMeteoService) {}
 
   async search({ name, count, language, countryCode }: SearchLocationsArgs): Promise<Place[]> {
-    const { results } = await this.openMeteo.geocoding({
-      name,
-      count,
-      language,
-      countryCode: countryCode ?? undefined,
-    });
-
-    return results.map((result) => ({
-      id: String(result.id),
-      name: result.name,
-      country: result.country ?? null,
-      countryCode: result.country_code ?? null,
-      admin1: result.admin1 ?? null,
-      latitude: result.latitude,
-      longitude: result.longitude,
-      elevation: result.elevation ?? null,
-      timezone: result.timezone ?? null,
-      population: result.population ?? null,
-    }));
+    const { results } = await this.openMeteo.geocoding({ name, count, language, countryCode });
+    return results;
   }
 }

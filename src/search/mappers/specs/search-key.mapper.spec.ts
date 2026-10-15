@@ -1,4 +1,4 @@
-import { searchKey } from '../search-key.js';
+import { toSearchKey as searchKey } from '../search-key.mapper.js';
 
 describe('searchKey', () => {
   const base = { name: 'Zakopane', count: 10, language: 'en' };
@@ -17,7 +17,7 @@ describe('searchKey', () => {
 
   it('uses an empty country code when none is given', () => {
     expect(searchKey(base).countryCode).toBe('');
-    expect(searchKey({ ...base, countryCode: null }).countryCode).toBe('');
+    expect(searchKey({ ...base, countryCode: undefined }).countryCode).toBe('');
   });
 
   it.each([

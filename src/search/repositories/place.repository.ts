@@ -1,15 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '../../generated/prisma/client.js';
 import { upsertPlaces } from '../../generated/prisma/sql.js';
-import type { Place as PlaceRow } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../shared/database/prisma.service.js';
 import type { Place } from '../entities/place.js';
-import type { SearchKey } from '../utils/search-key.js';
+import { toStoredSearch, placeSearchWithPlaces, type StoredSearch } from '../mappers/place-search.mapper.js';
+import type { SearchKey } from '../mappers/search-key.mapper.js';
 
-export interface StoredSearch {
-  fetchedAt: Date;
-  places: Place[];
-}
+const uniqueKey = (key: SearchKey) => ({ query_language_countryCode_resultCount: key });
 
 @Injectable()
 export class PlaceRepository {
@@ -17,73 +14,32 @@ export class PlaceRepository {
 
   async findSearch(key: SearchKey): Promise<StoredSearch | null> {
     const search = await this.prisma.placeSearch.findUnique({
-      where: { query_language_countryCode_resultCount: toUnique(key) },
-      include: { hits: { orderBy: { position: 'asc' }, include: { place: true } } },
+      where: uniqueKey(key),
+      include: placeSearchWithPlaces,
     });
-    if (!search) {
-      return null;
-    }
-    return { fetchedAt: search.fetchedAt, places: search.hits.map((hit) => fromRow(hit.place)) };
+    return search && toStoredSearch(search);
   }
 
   async saveSearch(key: SearchKey, places: Place[], fetchedAt: Date): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       await storePlaces(tx, places);
       const search = await tx.placeSearch.upsert({
-        where: { query_language_countryCode_resultCount: toUnique(key) },
-        create: { ...toUnique(key), fetchedAt },
+        where: uniqueKey(key),
+        create: { ...key, fetchedAt },
         update: { fetchedAt },
       });
       await tx.placeSearchHit.deleteMany({ where: { searchId: search.id } });
       await tx.placeSearchHit.createMany({
-        data: places.map((place, position) => ({
-          searchId: search.id,
-          position,
-          placeId: Number(place.id),
-        })),
+        data: places.map((place, position) => ({ searchId: search.id, position, placeId: place.id })),
       });
     });
   }
 }
 
 async function storePlaces(tx: Prisma.TransactionClient, places: Place[]): Promise<void> {
-  const rows = [...new Map(places.map((place) => [place.id, toRow(place)])).values()];
+  const rows = [...new Map(places.map((place) => [place.id, place])).values()];
   if (rows.length === 0) {
     return;
   }
   await tx.$queryRawTyped(upsertPlaces({ rows }));
-}
-
-function toUnique(key: SearchKey) {
-  return { query: key.query, language: key.language, countryCode: key.countryCode, resultCount: key.count };
-}
-
-function toRow(place: Place) {
-  return {
-    id: Number(place.id),
-    name: place.name,
-    country: place.country,
-    countryCode: place.countryCode,
-    admin1: place.admin1,
-    latitude: place.latitude,
-    longitude: place.longitude,
-    elevationM: place.elevation,
-    timezone: place.timezone,
-    population: place.population,
-  };
-}
-
-function fromRow(row: PlaceRow): Place {
-  return {
-    id: String(row.id),
-    name: row.name,
-    country: row.country,
-    countryCode: row.countryCode,
-    admin1: row.admin1,
-    latitude: row.latitude,
-    longitude: row.longitude,
-    elevation: row.elevationM,
-    timezone: row.timezone,
-    population: row.population,
-  };
 }

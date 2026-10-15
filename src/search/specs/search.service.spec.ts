@@ -3,15 +3,16 @@ import type { AppConfig } from '../../shared/config/env.schema.js';
 import type { Clock } from '../../shared/clock.js';
 import type { GeocodingClient } from '../geocoding.client.js';
 import type { Place } from '../entities/place.js';
-import type { PlaceRepository, StoredSearch } from '../repositories/place.repository.js';
-import { searchKey } from '../utils/search-key.js';
+import type { StoredSearch } from '../mappers/place-search.mapper.js';
+import type { PlaceRepository } from '../repositories/place.repository.js';
+import { toSearchKey as searchKey } from '../mappers/search-key.mapper.js';
 import { SearchService } from '../search.service.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const NOW = new Date('2026-01-31T12:00:00Z');
 const input = { name: '  Zakopane ', count: 10, language: 'en' };
 
-function place(id: string): Place {
+function place(id: number): Place {
   return {
     id,
     name: `Place ${id}`,
@@ -27,7 +28,7 @@ function place(id: string): Place {
 }
 
 function stored(ageDays: number): StoredSearch {
-  return { fetchedAt: new Date(NOW.getTime() - ageDays * DAY_MS), places: [place('stored')] };
+  return { fetchedAt: new Date(NOW.getTime() - ageDays * DAY_MS), places: [place(1)] };
 }
 
 function createService(options: { stored?: StoredSearch | null; geocoderError?: Error } = {}) {
@@ -35,7 +36,7 @@ function createService(options: { stored?: StoredSearch | null; geocoderError?: 
   if (options.geocoderError) {
     search.mockRejectedValue(options.geocoderError);
   } else {
-    search.mockResolvedValue([place('found')]);
+    search.mockResolvedValue([place(2)]);
   }
   const findSearch = jest.fn<PlaceRepository['findSearch']>().mockResolvedValue(options.stored ?? null);
   const saveSearch = jest.fn<PlaceRepository['saveSearch']>().mockResolvedValue();
@@ -53,7 +54,7 @@ describe('SearchService', () => {
   it('returns a fresh stored search without calling the geocoder', async () => {
     const { service, search, saveSearch } = createService({ stored: stored(29) });
 
-    await expect(service.search(input)).resolves.toEqual([place('stored')]);
+    await expect(service.search(input)).resolves.toEqual([place(1)]);
 
     expect(search).not.toHaveBeenCalled();
     expect(saveSearch).not.toHaveBeenCalled();
@@ -70,16 +71,16 @@ describe('SearchService', () => {
   it('calls the geocoder and stores the result when nothing is stored', async () => {
     const { service, search, saveSearch } = createService();
 
-    await expect(service.search(input)).resolves.toEqual([place('found')]);
+    await expect(service.search(input)).resolves.toEqual([place(2)]);
 
     expect(search).toHaveBeenCalledWith(input);
-    expect(saveSearch).toHaveBeenCalledWith(searchKey(input), [place('found')], NOW);
+    expect(saveSearch).toHaveBeenCalledWith(searchKey(input), [place(2)], NOW);
   });
 
   it('refreshes a stored search older than the cache period', async () => {
     const { service, search, saveSearch } = createService({ stored: stored(31) });
 
-    await expect(service.search(input)).resolves.toEqual([place('found')]);
+    await expect(service.search(input)).resolves.toEqual([place(2)]);
 
     expect(search).toHaveBeenCalledTimes(1);
     expect(saveSearch).toHaveBeenCalledTimes(1);
@@ -88,7 +89,7 @@ describe('SearchService', () => {
   it('returns the stale stored search when the geocoder fails', async () => {
     const { service, saveSearch } = createService({ stored: stored(90), geocoderError: new Error('down') });
 
-    await expect(service.search(input)).resolves.toEqual([place('stored')]);
+    await expect(service.search(input)).resolves.toEqual([place(1)]);
 
     expect(saveSearch).not.toHaveBeenCalled();
   });

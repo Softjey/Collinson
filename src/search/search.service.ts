@@ -5,8 +5,9 @@ import { APP_CONFIG } from '../shared/config/config.module.js';
 import type { AppConfig } from '../shared/config/env.schema.js';
 import { GeocodingClient } from './geocoding.client.js';
 import type { Place } from './entities/place.js';
-import { PlaceRepository, type StoredSearch } from './repositories/place.repository.js';
-import { searchKey } from './utils/search-key.js';
+import { PlaceRepository } from './repositories/place.repository.js';
+import type { StoredSearch } from './mappers/place-search.mapper.js';
+import { toSearchKey } from './mappers/search-key.mapper.js';
 import type { SearchLocationsArgs } from './entities/search-locations.args.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -23,7 +24,7 @@ export class SearchService {
   ) {}
 
   async search(input: SearchLocationsArgs): Promise<Place[]> {
-    const key = searchKey(input);
+    const key = toSearchKey(input);
     const stored = await this.places.findSearch(key);
 
     if (stored && this.isFresh(stored)) {
