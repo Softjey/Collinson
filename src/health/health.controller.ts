@@ -4,12 +4,12 @@ import { PrismaService } from '../shared/database/prisma.service.js';
 
 @Controller('health')
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   @Get()
   async check(): Promise<{ status: 'ok' }> {
     try {
-      await this.prisma.$queryRawTyped(checkConnection());
+      await this.prismaService.$queryRawTyped(checkConnection());
     } catch {
       throw new ServiceUnavailableException({ status: 'error' });
     }
