@@ -1,22 +1,21 @@
-import { SURFING } from '../entities/activity-definitions.js';
-import type { MarineDayFeatures } from '../utils/daily-features.js';
-import type { DayContext } from '../entities/definition.types.js';
+import { SURFING } from '../entities/activities.js';
+import type { DayConditions, MarineDayFeatures } from '../entities/day-features.js';
 import { buildMarine, buildWeatherFeatures } from '../../../test/support/builders/day.js';
 import { curveOf, scoreDay } from '../../../test/support/scoring-helpers.js';
 
-const weather = buildWeatherFeatures({ windMax: 15 });
+const weather = buildWeatherFeatures({ maxWindSpeedKmh: 15 });
 const waves = buildMarine().features as MarineDayFeatures;
 
-const context = (overrides: Partial<DayContext> = {}): DayContext => ({
+const context = (overrides: Partial<DayConditions> = {}): DayConditions => ({
   weather,
   marine: buildMarine(),
   ...overrides,
 });
 
 describe('surfing utilities', () => {
-  const waveHeightUtility = curveOf(SURFING, 'waveHeight');
-  const wavePeriodUtility = curveOf(SURFING, 'wavePeriod');
-  const windUtility = curveOf(SURFING, 'windMax');
+  const waveHeightUtility = curveOf(SURFING, 'maxWaveHeightM');
+  const wavePeriodUtility = curveOf(SURFING, 'maxWavePeriodS');
+  const windUtility = curveOf(SURFING, 'maxWindSpeedKmh');
 
   it.each([
     [0.1, 0],
@@ -67,7 +66,7 @@ describe('surfing utilities', () => {
 
 describe('surfing outcome', () => {
   it('combines the three utilities with exponents 0.35, 0.35 and 0.30', () => {
-    const day = context({ marine: { hasSea: true, features: { waveHeight: 0.8, wavePeriod: 8 } } });
+    const day = context({ marine: { hasSea: true, features: { maxWaveHeightM: 0.8, maxWavePeriodS: 8 } } });
     const expected = 0.6 ** 0.35 * 0.4 ** 0.35 * 1 ** 0.3;
 
     expect(scoreDay(SURFING, day)).toEqual({ kind: 'scored', score: expect.closeTo(expected, 10) });
@@ -78,25 +77,25 @@ describe('surfing outcome', () => {
   });
 
   it('weights wind with the third exponent', () => {
-    const day = context({ weather: { ...weather, windMax: 25 } });
+    const day = context({ weather: { ...weather, maxWindSpeedKmh: 25 } });
 
     expect(scoreDay(SURFING, day)).toEqual({ kind: 'scored', score: expect.closeTo(0.7 ** 0.3, 10) });
   });
 
-  it.each([0.3, 0.1, 0])('scores 0 when waves are %s m', (waveHeight) => {
-    const day = context({ marine: { hasSea: true, features: { waveHeight, wavePeriod: 12 } } });
+  it.each([0.3, 0.1, 0])('scores 0 when waves are %s m', (maxWaveHeightM) => {
+    const day = context({ marine: { hasSea: true, features: { maxWaveHeightM, maxWavePeriodS: 12 } } });
 
     expect(scoreDay(SURFING, day)).toEqual({ kind: 'scored', score: 0 });
   });
 
   it('scores 0 when the period is 5 s or less', () => {
-    const day = context({ marine: { hasSea: true, features: { waveHeight: 1.5, wavePeriod: 5 } } });
+    const day = context({ marine: { hasSea: true, features: { maxWaveHeightM: 1.5, maxWavePeriodS: 5 } } });
 
     expect(scoreDay(SURFING, day)).toEqual({ kind: 'scored', score: 0 });
   });
 
   it('scores 0 when the wind is 55 km/h or more', () => {
-    const day = context({ weather: { ...weather, windMax: 55 } });
+    const day = context({ weather: { ...weather, maxWindSpeedKmh: 55 } });
 
     expect(scoreDay(SURFING, day)).toEqual({ kind: 'scored', score: 0 });
   });
@@ -119,7 +118,7 @@ describe('surfing outcome', () => {
   });
 
   it('is NO_DATA when the wind feature is missing', () => {
-    expect(scoreDay(SURFING, context({ weather: { ...weather, windMax: null } }))).toEqual({
+    expect(scoreDay(SURFING, context({ weather: { ...weather, maxWindSpeedKmh: null } }))).toEqual({
       kind: 'unscored',
       reason: 'NO_DATA',
     });
@@ -132,7 +131,7 @@ describe('surfing outcome', () => {
     });
   });
 
-  it.each(['waveHeight', 'wavePeriod'] as const)('is NO_DATA when %s is missing', (feature) => {
+  it.each(['maxWaveHeightM', 'maxWavePeriodS'] as const)('is NO_DATA when %s is missing', (feature) => {
     const day = context({ marine: { hasSea: true, features: { ...waves, [feature]: null } } });
 
     expect(scoreDay(SURFING, day)).toEqual({ kind: 'unscored', reason: 'NO_DATA' });

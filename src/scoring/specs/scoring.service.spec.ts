@@ -1,14 +1,35 @@
 import { Test } from '@nestjs/testing';
 import { ACTIVITIES } from '../entities/activity.js';
 import { withWeatherAndSea } from '../../../test/support/builders/day.js';
+import { ALL_ACTIVITY_SCORERS } from '../entities/activities.js';
+import { ActivityCatalogue } from '../entities/activity-scorers.js';
+import { ScoreScale } from '../entities/score-scale.js';
+import { DailyFeaturesMapper } from '../mappers/daily-features.mapper.js';
 import { FeatureValuesMapper } from '../mappers/feature-values.mapper.js';
 import { ScoringModule } from '../scoring.module.js';
 import { ScoringService } from '../scoring.service.js';
 
-const day = withWeatherAndSea({ windMax: 15 });
+const hourlyWeather = {
+  unixSeconds: 0,
+  temperatureC: 7,
+  relativeHumidityPercent: 50,
+  precipitationMm: 0,
+  rainMm: 0,
+  snowfallCm: 0,
+  snowDepthM: 0,
+  cloudCoverPercent: 20,
+  windSpeedKmh: 10,
+};
+
+const day = withWeatherAndSea({ maxWindSpeedKmh: 15 });
 
 describe('ScoringService', () => {
-  const service = new ScoringService(new FeatureValuesMapper());
+  const service = new ScoringService(
+    new ActivityCatalogue(ALL_ACTIVITY_SCORERS),
+    new ScoreScale(),
+    new DailyFeaturesMapper(),
+    new FeatureValuesMapper(),
+  );
 
   it('scores the requested activities in order', () => {
     const results = service.score(['INDOOR_SIGHTSEEING', 'SKIING', 'SURFING'], day);
@@ -29,6 +50,27 @@ describe('ScoringService', () => {
 
   it('fails for an unknown activity', () => {
     expect(() => service.score(['CURLING' as never], day)).toThrow('CURLING');
+  });
+
+  it('summarises hourly weather into days of the given time zone', () => {
+    const hours = [{ ...hourlyWeather, unixSeconds: Date.parse('2024-01-10T00:00:00Z') / 1000 }];
+
+    expect(service.summariseWeatherDays(hours, 'UTC').get('2024-01-10')?.maxTemperatureC).toBe(7);
+  });
+
+  it('summarises hourly waves into days of the given time zone', () => {
+    const hours = [
+      { unixSeconds: Date.parse('2024-01-10T00:00:00Z') / 1000, waveHeightM: 2, wavePeriodS: 9 },
+    ];
+
+    expect(service.summariseMarineDays(hours, 'UTC').get('2024-01-10')).toEqual({
+      maxWaveHeightM: 2,
+      maxWavePeriodS: 9,
+    });
+  });
+
+  it('rates a score into its category', () => {
+    expect(service.rate(0.395)).toEqual({ score: 0.4, categoryIndex: 3, category: 'MARGINAL' });
   });
 
   it('reports the sources the activities need', () => {

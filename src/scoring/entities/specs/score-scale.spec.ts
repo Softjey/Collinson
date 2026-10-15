@@ -1,6 +1,8 @@
-import { categorize } from '../category.js';
+import { ScoreScale } from '../score-scale.js';
 
-describe('categorize', () => {
+describe('ScoreScale.rate', () => {
+  const scale = new ScoreScale();
+
   it.each([
     [0, 1, 'UNSUITABLE'],
     [0.09, 1, 'UNSUITABLE'],
@@ -18,24 +20,24 @@ describe('categorize', () => {
     [0.89, 7, 'EXCELLENT'],
     [0.9, 8, 'IDEAL'],
     [1, 8, 'IDEAL'],
-  ])('maps %s to index %i %s', (score, index, category) => {
-    expect(categorize(score)).toEqual({ score, index, category });
+  ])('maps %s to category %i %s', (score, categoryIndex, category) => {
+    expect(scale.rate(score)).toEqual({ score, categoryIndex, category });
   });
 
   it('rounds to 2 decimals before classifying', () => {
-    expect(categorize(0.395)).toEqual({ score: 0.4, index: 3, category: 'MARGINAL' });
+    expect(scale.rate(0.395)).toEqual({ score: 0.4, categoryIndex: 3, category: 'MARGINAL' });
   });
 
   it('rounds down a value just under a band edge', () => {
-    expect(categorize(0.0949)).toEqual({ score: 0.09, index: 1, category: 'UNSUITABLE' });
+    expect(scale.rate(0.0949)).toEqual({ score: 0.09, categoryIndex: 1, category: 'UNSUITABLE' });
   });
 
   it('classifies a gap value between printed bands by its rounded score', () => {
-    expect(categorize(0.699).index).toBe(6);
-    expect(categorize(0.694).index).toBe(5);
+    expect(scale.rate(0.699).categoryIndex).toBe(6);
+    expect(scale.rate(0.694).categoryIndex).toBe(5);
   });
 
   it.each([-0.01, 1.01, Number.NaN, Number.POSITIVE_INFINITY])('rejects %s', (score) => {
-    expect(() => categorize(score)).toThrow(RangeError);
+    expect(() => scale.rate(score)).toThrow(RangeError);
   });
 });

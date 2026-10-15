@@ -1,4 +1,4 @@
-import type { WeatherDayFeatures } from '../../src/scoring/utils/daily-features.js';
+import type { WeatherDayFeatures } from '../../src/scoring/entities/day-features.js';
 import { loadFixture } from './fixtures.js';
 
 interface DatedEvent {

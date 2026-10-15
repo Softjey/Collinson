@@ -1,27 +1,26 @@
 import { loadEventFeatures } from '../../../test/support/scoring-events.js';
-import { SKIING } from '../entities/activity-definitions.js';
-import { categorize } from '../utils/category.js';
-import type { WeatherDayFeatures } from '../utils/daily-features.js';
+import { SKIING } from '../entities/activities.js';
+import type { WeatherDayFeatures } from '../entities/day-features.js';
 import { NO_WEATHER, withWeather } from '../../../test/support/builders/day.js';
-import { curveOf, scoreDay, scoreOf } from '../../../test/support/scoring-helpers.js';
+import { curveOf, scoreDay, scoreOf, rate } from '../../../test/support/scoring-helpers.js';
 
 const snowyDay: Partial<WeatherDayFeatures> = {
-  tMax: 3,
-  rhMean: 70,
-  snowDepthMax: 0.5,
-  cloud: 25,
-  windMean: 0,
-  windMax: 5,
+  maxTemperatureC: 3,
+  meanRelativeHumidityPercent: 70,
+  maxSnowDepthM: 0.5,
+  meanCloudCoverPercent: 25,
+  meanWindSpeedKmh: 0,
+  maxWindSpeedKmh: 5,
 };
 
 const day = (overrides: Partial<WeatherDayFeatures>) => withWeather({ ...snowyDay, ...overrides });
 
-const snowUtility = curveOf(SKIING, 'snowHours');
-const windUtility = curveOf(SKIING, 'windMeanMs');
-const temperatureUtility = curveOf(SKIING, 'tMax');
-const cloudUtility = curveOf(SKIING, 'cloud');
-const rainMultiplier = curveOf(SKIING, 'rain');
-const depthMultiplier = curveOf(SKIING, 'snowDepthMax');
+const snowUtility = curveOf(SKIING, 'snowfallHours');
+const windUtility = curveOf(SKIING, 'meanWindSpeedMs');
+const temperatureUtility = curveOf(SKIING, 'maxTemperatureC');
+const cloudUtility = curveOf(SKIING, 'meanCloudCoverPercent');
+const rainMultiplier = curveOf(SKIING, 'totalRainMm');
+const depthMultiplier = curveOf(SKIING, 'maxSnowDepthM');
 
 describe('skiing snow utility', () => {
   it('is 0.9805 without snowing hours', () => {
@@ -45,8 +44,8 @@ describe('skiing wind utility', () => {
 
   it('is applied to the mean wind converted from km/h to m/s', () => {
     expect(windUtility(10)).toBeCloseTo((104.37 - 67.8 - 19 + 10) / 104.37);
-    const windy = scoreOf(SKIING, day({ windMean: 36 }));
-    const calm = scoreOf(SKIING, day({ windMean: 0 }));
+    const windy = scoreOf(SKIING, day({ meanWindSpeedKmh: 36 }));
+    const calm = scoreOf(SKIING, day({ meanWindSpeedKmh: 0 }));
 
     expect(calm - windy).toBeCloseTo(0.279 * (1 - windUtility(10)));
   });
@@ -117,18 +116,18 @@ describe('skiing multipliers', () => {
 
 describe('skiing outcome', () => {
   it('is NO_SNOW when depth and snowfall are both 0', () => {
-    expect(scoreDay(SKIING, day({ snowDepthMax: 0, snowfallSum: 0 }))).toEqual({
+    expect(scoreDay(SKIING, day({ maxSnowDepthM: 0, totalSnowfallCm: 0 }))).toEqual({
       kind: 'unscored',
       reason: 'NO_SNOW',
     });
   });
 
   it('is scored when only the snow depth is positive', () => {
-    expect(scoreDay(SKIING, day({ snowDepthMax: 0.4, snowfallSum: 0 })).kind).toBe('scored');
+    expect(scoreDay(SKIING, day({ maxSnowDepthM: 0.4, totalSnowfallCm: 0 })).kind).toBe('scored');
   });
 
   it('is scored when only the snowfall is positive', () => {
-    expect(scoreDay(SKIING, day({ snowDepthMax: 0, snowfallSum: 1, snowHours: 2 }))).toEqual({
+    expect(scoreDay(SKIING, day({ maxSnowDepthM: 0, totalSnowfallCm: 1, snowfallHours: 2 }))).toEqual({
       kind: 'scored',
       score: 0,
     });
@@ -141,28 +140,33 @@ describe('skiing outcome', () => {
       0.222 * temperatureUtility(3) +
       0.194 * cloudUtility(25);
 
-    expect(scoreOf(SKIING, day({ rain: 1.5, snowDepthMax: 0.15, snowHours: 1 }))).toBeCloseTo(
+    expect(scoreOf(SKIING, day({ totalRainMm: 1.5, maxSnowDepthM: 0.15, snowfallHours: 1 }))).toBeCloseTo(
       sui * 0.5 * 0.5,
     );
   });
 
   it('scores 0 when it rains 3 mm', () => {
-    expect(scoreDay(SKIING, day({ rain: 3 }))).toEqual({ kind: 'scored', score: 0 });
+    expect(scoreDay(SKIING, day({ totalRainMm: 3 }))).toEqual({ kind: 'scored', score: 0 });
   });
 
-  it.each(['tMax', 'rain', 'snowfallSum', 'snowDepthMax', 'snowHours', 'cloud', 'windMean'] as const)(
-    'is NO_DATA when %s is missing',
-    (feature) => {
-      expect(scoreDay(SKIING, day({ [feature]: null }))).toEqual({ kind: 'unscored', reason: 'NO_DATA' });
-    },
-  );
+  it.each([
+    'maxTemperatureC',
+    'totalRainMm',
+    'totalSnowfallCm',
+    'maxSnowDepthM',
+    'snowfallHours',
+    'meanCloudCoverPercent',
+    'meanWindSpeedKmh',
+  ] as const)('is NO_DATA when %s is missing', (feature) => {
+    expect(scoreDay(SKIING, day({ [feature]: null }))).toEqual({ kind: 'unscored', reason: 'NO_DATA' });
+  });
 
   it('is NO_DATA without weather', () => {
     expect(scoreDay(SKIING, NO_WEATHER)).toEqual({ kind: 'unscored', reason: 'NO_DATA' });
   });
 
   it('checks for missing data before NO_SNOW', () => {
-    expect(scoreDay(SKIING, day({ snowDepthMax: 0, snowfallSum: 0, tMax: null }))).toEqual({
+    expect(scoreDay(SKIING, day({ maxSnowDepthM: 0, totalSnowfallCm: 0, maxTemperatureC: null }))).toEqual({
       kind: 'unscored',
       reason: 'NO_DATA',
     });
@@ -179,6 +183,6 @@ describe('skiing outcome', () => {
   ])('scores Beaver Creek on %s as %s', (date, expected) => {
     const score = scoreOf(SKIING, withWeather(loadEventFeatures('beaver-creek', date)));
 
-    expect(categorize(score).score).toBe(expected);
+    expect(rate(score).score).toBe(expected);
   });
 });

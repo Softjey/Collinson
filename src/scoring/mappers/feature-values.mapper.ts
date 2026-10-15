@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import type { DayContext } from '../entities/definition.types.js';
-import type { FeatureValues } from '../utils/derived-features.js';
+import type { DayConditions, FeatureValues } from '../entities/day-features.js';
 
+/** Flattens the weather and marine features of a day into the one record that formulas read from. */
 @Injectable()
 export class FeatureValuesMapper {
-  toFeatureValues({ weather, marine }: DayContext): FeatureValues {
+  toFeatureValues({ weather, marine }: DayConditions): FeatureValues {
     return {
       ...weather,
       ...marine?.features,

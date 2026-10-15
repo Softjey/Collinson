@@ -1,28 +1,50 @@
 import { Injectable } from '@nestjs/common';
 import type { Activity } from './entities/activity.js';
-import { findDefinition, requiredSources } from './utils/definition-lookup.js';
-import type { DataSource, DayContext, DayOutcome } from './entities/definition.types.js';
+import { ActivityCatalogue } from './entities/activity-scorers.js';
+import type {
+  ActivityOutcome,
+  DataSource,
+  DayConditions,
+  HourlyMarine,
+  HourlyWeather,
+  MarineDayFeatures,
+  WeatherDayFeatures,
+} from './entities/day-features.js';
+import { ScoreScale, type RatedScore } from './entities/score-scale.js';
+import { DailyFeaturesMapper } from './mappers/daily-features.mapper.js';
 import { FeatureValuesMapper } from './mappers/feature-values.mapper.js';
-import { scoreFeatures } from './utils/score-day.js';
 
-export interface ActivityOutcome {
-  activity: Activity;
-  outcome: DayOutcome;
-}
-
+/** Everything the rest of the application needs to know about how good a day is for an activity. */
 @Injectable()
 export class ScoringService {
-  constructor(private readonly featureValuesMapper: FeatureValuesMapper) {}
+  constructor(
+    private readonly activityCatalogue: ActivityCatalogue,
+    private readonly scoreScale: ScoreScale,
+    private readonly dailyFeaturesMapper: DailyFeaturesMapper,
+    private readonly featureValuesMapper: FeatureValuesMapper,
+  ) {}
 
-  score(activities: readonly Activity[], day: DayContext): ActivityOutcome[] {
+  requiredSources(activities: readonly Activity[]): DataSource[] {
+    return this.activityCatalogue.requiredSourcesOf(activities);
+  }
+
+  summariseWeatherDays(hours: readonly HourlyWeather[], timeZone: string): Map<string, WeatherDayFeatures> {
+    return this.dailyFeaturesMapper.toWeatherDays(hours, timeZone);
+  }
+
+  summariseMarineDays(hours: readonly HourlyMarine[], timeZone: string): Map<string, MarineDayFeatures> {
+    return this.dailyFeaturesMapper.toMarineDays(hours, timeZone);
+  }
+
+  score(activities: readonly Activity[], day: DayConditions): ActivityOutcome[] {
     const features = this.featureValuesMapper.toFeatureValues(day);
     return activities.map((activity) => ({
       activity,
-      outcome: scoreFeatures(findDefinition(activity), features),
+      outcome: this.activityCatalogue.scorerFor(activity).score(features),
     }));
   }
 
-  requiredSources(activities: readonly Activity[]): DataSource[] {
-    return requiredSources(activities);
+  rate(score: number): RatedScore {
+    return this.scoreScale.rate(score);
   }
 }

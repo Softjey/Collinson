@@ -1,9 +1,8 @@
 import { loadEventFeatures } from '../../../test/support/scoring-events.js';
-import { OUTDOOR_SIGHTSEEING } from '../entities/activity-definitions.js';
-import { categorize } from '../utils/category.js';
-import type { WeatherDayFeatures } from '../utils/daily-features.js';
+import { OUTDOOR_SIGHTSEEING } from '../entities/activities.js';
+import type { WeatherDayFeatures } from '../entities/day-features.js';
 import { NO_WEATHER, withWeather } from '../../../test/support/builders/day.js';
-import { curveOf, scoreDay, scoreOf, withoutCaps } from '../../../test/support/scoring-helpers.js';
+import { curveOf, scoreDay, scoreOf, withoutCaps, rate } from '../../../test/support/scoring-helpers.js';
 
 const day = (overrides: Partial<WeatherDayFeatures>) => withWeather(overrides);
 
@@ -13,9 +12,9 @@ const holidayClimateIndex = (overrides: Partial<WeatherDayFeatures> = {}) =>
 
 describe('outdoor rating tables', () => {
   const thermalComfortRating = curveOf(OUTDOOR_SIGHTSEEING, 'humidex');
-  const cloudRating = curveOf(OUTDOOR_SIGHTSEEING, 'cloud');
-  const precipitationRating = curveOf(OUTDOOR_SIGHTSEEING, 'precip');
-  const windRating = curveOf(OUTDOOR_SIGHTSEEING, 'windMean');
+  const cloudRating = curveOf(OUTDOOR_SIGHTSEEING, 'meanCloudCoverPercent');
+  const precipitationRating = curveOf(OUTDOOR_SIGHTSEEING, 'totalPrecipitationMm');
+  const windRating = curveOf(OUTDOOR_SIGHTSEEING, 'meanWindSpeedKmh');
 
   it.each([
     [-30, 1],
@@ -131,39 +130,53 @@ describe('holiday climate index', () => {
   });
 
   it('never goes below 0 when ratings are negative', () => {
-    const storm = { tMax: 50, rhMean: 100, cloud: 100, precip: 30, windMean: 80, windMax: 100 };
+    const storm = {
+      maxTemperatureC: 50,
+      meanRelativeHumidityPercent: 100,
+      meanCloudCoverPercent: 100,
+      totalPrecipitationMm: 30,
+      meanWindSpeedKmh: 80,
+      maxWindSpeedKmh: 100,
+    };
 
     expect(holidayClimateIndex(storm)).toBe(0);
   });
 
   it('never goes above 1', () => {
-    expect(holidayClimateIndex({ tMax: 24, rhMean: 40, cloud: 15, windMean: 5 })).toBeLessThanOrEqual(1);
+    expect(
+      holidayClimateIndex({
+        maxTemperatureC: 24,
+        meanRelativeHumidityPercent: 40,
+        meanCloudCoverPercent: 15,
+        meanWindSpeedKmh: 5,
+      }),
+    ).toBeLessThanOrEqual(1);
   });
 });
 
 describe('outdoor caps', () => {
   it('does not cap 5.99 mm of precipitation', () => {
-    expect(outdoor({ precip: 5.99 })).toBeCloseTo(0.93);
+    expect(outdoor({ totalPrecipitationMm: 5.99 })).toBeCloseTo(0.93);
   });
 
   it('caps 6 mm of precipitation at 0.5', () => {
-    expect(outdoor({ precip: 6 })).toBe(0.5);
+    expect(outdoor({ totalPrecipitationMm: 6 })).toBe(0.5);
   });
 
   it('does not cap a maximum wind of 59.9 km/h', () => {
-    expect(outdoor({ windMax: 59.9 })).toBeCloseTo(0.99);
+    expect(outdoor({ maxWindSpeedKmh: 59.9 })).toBeCloseTo(0.99);
   });
 
   it('caps a maximum wind of 60 km/h at 0.2', () => {
-    expect(outdoor({ windMax: 60 })).toBe(0.2);
+    expect(outdoor({ maxWindSpeedKmh: 60 })).toBe(0.2);
   });
 
   it('caps 25 mm of precipitation at 0.2', () => {
-    expect(outdoor({ precip: 25 })).toBe(0.2);
+    expect(outdoor({ totalPrecipitationMm: 25 })).toBe(0.2);
   });
 
   it('leaves a score that is already below the cap unchanged', () => {
-    const gloomy = { tMax: 5, cloud: 100, precip: 6 };
+    const gloomy = { maxTemperatureC: 5, meanCloudCoverPercent: 100, totalPrecipitationMm: 6 };
 
     expect(holidayClimateIndex(gloomy)).toBeCloseTo(0.38);
     expect(outdoor(gloomy)).toBeCloseTo(0.38);
@@ -171,24 +184,29 @@ describe('outdoor caps', () => {
 });
 
 describe('outdoor data', () => {
-  it.each(['tMax', 'rhMean', 'precip', 'cloud', 'windMean', 'windMax'] as const)(
-    'is NO_DATA when %s is missing',
-    (feature) => {
-      expect(scoreDay(OUTDOOR_SIGHTSEEING, day({ [feature]: null }))).toEqual({
-        kind: 'unscored',
-        reason: 'NO_DATA',
-      });
-    },
-  );
+  it.each([
+    'maxTemperatureC',
+    'meanRelativeHumidityPercent',
+    'totalPrecipitationMm',
+    'meanCloudCoverPercent',
+    'meanWindSpeedKmh',
+    'maxWindSpeedKmh',
+  ] as const)('is NO_DATA when %s is missing', (feature) => {
+    expect(scoreDay(OUTDOOR_SIGHTSEEING, day({ [feature]: null }))).toEqual({
+      kind: 'unscored',
+      reason: 'NO_DATA',
+    });
+  });
 
   it('is NO_DATA without weather', () => {
     expect(scoreDay(OUTDOOR_SIGHTSEEING, NO_WEATHER)).toEqual({ kind: 'unscored', reason: 'NO_DATA' });
   });
 
   it('does not need snow features', () => {
-    expect(scoreDay(OUTDOOR_SIGHTSEEING, day({ snowDepthMax: null, snowHours: null, rain: null })).kind).toBe(
-      'scored',
-    );
+    expect(
+      scoreDay(OUTDOOR_SIGHTSEEING, day({ maxSnowDepthM: null, snowfallHours: null, totalRainMm: null }))
+        .kind,
+    ).toBe('scored');
   });
 });
 
@@ -196,15 +214,15 @@ describe('outdoor scoring of the dated events', () => {
   it('scores London on 2022-02-18 0.63 before the caps and 0.20 after', () => {
     const london = withWeather(loadEventFeatures('london', '2022-02-18'));
 
-    expect(categorize(scoreOf(withoutCaps(OUTDOOR_SIGHTSEEING), london)).score).toBe(0.63);
-    expect(categorize(scoreOf(OUTDOOR_SIGHTSEEING, london)).score).toBe(0.2);
+    expect(rate(scoreOf(withoutCaps(OUTDOOR_SIGHTSEEING), london)).score).toBe(0.63);
+    expect(rate(scoreOf(OUTDOOR_SIGHTSEEING, london)).score).toBe(0.2);
   });
 
   it('scores Hong Kong on 2023-09-01 0.23 before the caps and 0.20 after', () => {
     const hongKong = withWeather(loadEventFeatures('hong-kong', '2023-09-01'));
 
-    expect(categorize(scoreOf(withoutCaps(OUTDOOR_SIGHTSEEING), hongKong)).score).toBe(0.23);
-    expect(categorize(scoreOf(OUTDOOR_SIGHTSEEING, hongKong)).score).toBe(0.2);
+    expect(rate(scoreOf(withoutCaps(OUTDOOR_SIGHTSEEING), hongKong)).score).toBe(0.23);
+    expect(rate(scoreOf(OUTDOOR_SIGHTSEEING, hongKong)).score).toBe(0.2);
   });
 
   it('scores Hong Kong on 2023-09-02 below 0.10', () => {
