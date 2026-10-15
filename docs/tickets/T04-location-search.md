@@ -23,7 +23,7 @@ Touches only `src/search/` and `test/fixtures/search/`. No import from `weather`
   (`name`, `count`, `language`, optional `countryCode`) and returns the places.
 - `PlaceRepository`: upsert `Place` by GeoNames id; find a `PlaceSearch` by its key; store a search with its
   ordered hits; replace the hits of an existing search in one transaction.
-- `SearchService`:
+- `PlaceSearchService`:
   - cache key `(lower(trim(name)), language, countryCode or "", count)`;
   - a stored search younger than `PLACE_SEARCH_CACHE_DAYS` is returned without calling the geocoder;
   - otherwise the geocoder is called and the search stored or refreshed;
@@ -34,7 +34,7 @@ Touches only `src/search/` and `test/fixtures/search/`. No import from `weather`
 - `Place.id` is the GeoNames id as a number everywhere; GraphQL serialises it as `ID`. `Place.elevation` has the
   same name in the geocoder, the domain, the database and the contract.
 - The upsert of the places of a search is one TypedSQL statement (`prisma/sql/upsertPlaces.sql`).
-- `mappers/` holds `SearchKeyMapper` (the cache key) and `PlaceSearchMapper` (database row to stored search)
+- `mappers/` holds `PlaceSearchKeyMapper` (the cache key) and `PlaceSearchMapper` (database row to stored search)
   . Validation decorators (`@Trim`, `@IsCountryCode`, `@IsLanguageCode`, `@NullToUndefined`)
   come from `shared/validation`.
 
