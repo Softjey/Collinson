@@ -70,6 +70,20 @@ describe('PlaceRepository', () => {
     expect(rows[0]).toMatchObject({ id: 1, name: 'New name' });
   });
 
+  it('stores many places in one call, with nulls and a repeated id', async () => {
+    const places = [place('1'), place('2', { country: null, elevation: null, population: null }), place('1')];
+
+    await repository.saveSearch(key, places, new Date());
+
+    await expect(prisma.place.count()).resolves.toBe(2);
+    expect((await repository.findSearch(key))?.places.map((p) => p.id)).toEqual(['1', '2', '1']);
+    await expect(prisma.place.findUnique({ where: { id: 2 } })).resolves.toMatchObject({
+      country: null,
+      elevationM: null,
+      population: null,
+    });
+  });
+
   it('replaces the hits of a refreshed search and updates fetchedAt', async () => {
     const first = new Date('2026-09-01T00:00:00Z');
     const second = new Date('2026-10-13T00:00:00Z');

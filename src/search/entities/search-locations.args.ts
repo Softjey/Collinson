@@ -1,10 +1,10 @@
-import { Transform } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
-
-const TWO_LETTERS = /^[A-Za-z]{2}$/;
+import { IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsCountryCode } from '../../shared/validation/country-code.decorator.js';
+import { IsLanguageCode } from '../../shared/validation/language-code.decorator.js';
+import { Trim } from '../../shared/validation/trim.decorator.js';
 
 export class SearchLocationsArgs {
-  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
+  @Trim()
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
@@ -15,12 +15,10 @@ export class SearchLocationsArgs {
   @Max(100)
   count!: number;
 
-  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.toUpperCase() : value))
   @IsOptional()
-  @Matches(TWO_LETTERS)
+  @IsCountryCode()
   countryCode?: string | null;
 
-  @IsString()
-  @Matches(TWO_LETTERS)
+  @IsLanguageCode()
   language!: string;
 }
