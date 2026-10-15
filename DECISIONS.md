@@ -86,6 +86,8 @@ Formulas, tables, data and the full design are in [docs/technical-spec.md](docs/
 - **Inside a module** the root holds the module, service, resolver and clients. Types go to `entities/`, pure
   translation between layers to `mappers/`, database access to `repositories/`, other helpers to `utils/`, and
   tests to a `specs/` folder next to the code. Only the service works with mappers; clients and repositories do not.
+- **Test utilities have their own folder** (`test/support/`) and are kept apart from production helpers (`utils/`).
+  Tests share builders, hooks, stubs and fixture loading instead of repeating them.
 - **Names and types are aligned across layers** (for example `Place.id` is a number and `elevation` is called the
   same everywhere) so there is as little mapping as possible. What remains is explicit functions in `mappers/`.
 - **Raw SQL uses Prisma TypedSQL.** Custom validation decorators are shared.

@@ -118,8 +118,13 @@ src/
                    date-range.validator.ts, time-zone.service.ts, mappers/
   health/          health.controller.ts
   observability/   tracing.ts, metrics.ts
-test/              e2e specs, fixtures/, support/ (Testcontainers, scripted Open-Meteo)
+test/              e2e specs, fixtures/ (static JSON), support/ (everything that exists only for specs)
 ```
+
+Utilities used only by tests live in `test/support/`, never in `src/`: `builders/` (valid domain objects with
+overrides), hooks that set up a suite (`useTestApp`, `useTestDatabase`), stubs (`FakeOpenMeteo`, the Open-Meteo
+client stubs, the fake clock), the fixture loader, the shared GraphQL queries and helpers for scoring specs. `utils/`
+folders inside modules hold production code only.
 
 Unit tests are `*.spec.ts` in a `specs/` folder next to the code. Integration tests that need Postgres are
 `*.int-spec.ts` in the same place.
