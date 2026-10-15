@@ -8,10 +8,11 @@
     "node": ">=22"
   },
   "scripts": {
-    "postinstall": "prisma generate",
+    "postinstall": "node scripts/generate-prisma.mjs",
     "start:dev": "nest start --watch",
     "start": "node dist/src/main.js",
-    "build": "prisma generate && nest build",
+    "generate": "node scripts/generate-prisma.mjs",
+    "build": "node scripts/generate-prisma.mjs && nest build",
     "lint": "eslint \"{src,test}/**/*.ts\"",
     "format": "prettier --write \"{src,test}/**/*.ts\"",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.mjs",
