@@ -78,6 +78,10 @@ Rules:
 - `scoring` has no NestJS providers that touch I/O, no Prisma types and no imports from `weather`. It defines the
   input shapes it needs.
 - `activity-scores` is the only module that knows both `weather` and `scoring`.
+- A module exports only its service, and only when another module needs it. Currently that is `WeatherService` and
+  `ScoringService`; `search` exports nothing. Public methods take and return plain types owned by the module.
+- Validation of an upstream response belongs to `shared/open-meteo`: `OpenMeteoService` returns validated,
+  already camelCased data, and `weather` and `search` never see raw Open-Meteo shapes.
 - `shared` holds only technical code with no domain knowledge. Splitting a module into its own service means
   copying `shared`.
 
@@ -85,32 +89,44 @@ Rules:
 
 ```
 contracts/graphql/schema.graphql
-prisma/schema.prisma, prisma/migrations/
-prisma.config.ts
+prisma/schema.prisma, prisma/migrations/, prisma/sql/ (TypedSQL queries)
+prisma.config.ts, scripts/generate-prisma.mjs
 src/
   main.ts, app.module.ts
   shared/
     config/        env.schema.ts, config.module.ts
     database/      prisma.service.ts, database.module.ts
-    open-meteo/    open-meteo.module.ts, open-meteo.service.ts, open-meteo-http.client.ts (internal), open-meteo.errors.ts
-    clock/         clock.ts
+    open-meteo/    open-meteo.module.ts, open-meteo.service.ts, open-meteo-http.client.ts (internal),
+                   open-meteo.errors.ts, schemas/ (zod schemas of the three responses, camelCased output)
+    validation/    @Trim, @IsCountryCode, @IsLanguageCode, @NullToUndefined
     graphql/       scalars/ (date, date-time), error-formatter.ts
-    retry.ts, single-flight.ts
-  search/          search.module.ts, search.resolver.ts, search.service.ts,
-                   geocoding.client.ts, place.repository.ts, dto/
-  weather/         weather.module.ts, weather.service.ts, freshness.policy.ts,
-                   forecast.client.ts, marine.client.ts, location.repository.ts,
-                   forecast-snapshot.repository.ts, marine-snapshot.repository.ts, weather.types.ts
-  scoring/         math.ts, category.ts, daily-features.ts, activity-scorer.ts, scorer.registry.ts,
-                   activities/{outdoor,indoor,skiing,surfing}.scorer.ts, scoring.params.ts
+    clock.ts, clock.module.ts, single-flight.ts, retry.ts
+  <module>/        the root holds only the module, service, resolver and clients;
+                   entities/      types owned by the module
+                   mappers/       stateless injectable classes with methods that translate between layers (API response to domain,
+                                  database row to domain, input to cache key)
+                   repositories/  Prisma access, returns domain types
+                   utils/         other pure helpers (freshness policy, scoring maths and curves)
+                   specs/         unit tests; every subfolder has its own specs/ next to the code it covers
+  search/          search.module.ts, search.resolver.ts, search.service.ts, geocoding.client.ts
+  weather/         weather.module.ts, weather.service.ts, forecast.client.ts, marine.client.ts
+  scoring/         scoring.module.ts, scoring.service.ts; entities/ holds the activity definitions (the formulas
+                   as data), utils/ holds score-day.ts, curves, combiners, derived features, daily features
   activity-scores/ activity-scores.module.ts, activity-scores.resolver.ts, activity-scores.service.ts,
-                   date-range.validator.ts, time-zone.service.ts, result.mapper.ts, dto/
+                   date-range.validator.ts, time-zone.service.ts, mappers/
   health/          health.controller.ts
   observability/   tracing.ts, metrics.ts
-test/              e2e specs, fixtures/, support/ (Testcontainers, fake Open-Meteo)
+test/              e2e specs, fixtures/, support/ (Testcontainers, scripted Open-Meteo)
 ```
 
-Unit tests sit next to the code as `*.spec.ts`. Integration tests that need Postgres are `*.int-spec.ts`.
+Unit tests are `*.spec.ts` in a `specs/` folder next to the code. Integration tests that need Postgres are
+`*.int-spec.ts` in the same place.
+
+Raw SQL is written only as TypedSQL: a `.sql` file in `prisma/sql/` becomes a typed function called with
+`$queryRawTyped`. TypedSQL types come from a live database, so `scripts/generate-prisma.mjs` starts a throwaway
+PostgreSQL with Testcontainers (or uses `DATABASE_URL`), applies the migrations and runs `prisma generate --sql`.
+`postinstall` and `build` run it, so both need Docker or a reachable database. The one exception is the test helper
+that truncates tables, because TypedSQL does not accept DDL.
 
 ### 3.3 Key interfaces
 
@@ -126,16 +142,20 @@ interface DayContext {
   marine: { hasSea: boolean; features: MarineDayFeatures | null } | null; // null: not requested
 }
 
-interface ActivityScorer {
-  readonly activity: Activity;
-  readonly requiredSources: readonly DataSource[];    // 'WEATHER' | 'WAVES'
-  evaluate(day: DayContext): DayOutcome;
+interface ScoringService {
+  score(activities: Activity[], day: DayContext): { activity: Activity; outcome: DayOutcome }[];
+  requiredSources(activities: Activity[]): DataSource[];    // 'WEATHER' | 'WAVES'
 }
 ```
 
-Scorers are registered through a multi-provider token and collected in `ScorerRegistry`. Adding an activity is a
-new class, one line in the registry and one enum value in the contract. Indoor reuses the pure outdoor score
-function rather than depending on the outdoor scorer instance.
+An activity is a record, not a class: its sources, gates (the conditions that make a day unscored), factors
+(feature, curve, weight), combiner (`weightedSum` or `geometric`), multipliers and caps. A single function,
+`scoreDay(definition, day)`, reads the record and computes the score. Curve kinds (`piecewise`, `steps`,
+`polynomial`, `peakNormalizedGev`), derived features (`humidex`, `divide`) and combiners are small registries.
+Indoor sightseeing is a record that is based on the outdoor one (`0.5 + 0.5 * (1 - outdoor)`).
+
+Adding an activity: add its name to `ACTIVITIES` and to the contract enum, then add a record to
+`activity-definitions.ts`. A new curve, derived feature or combiner kind is one entry in its registry.
 
 Weather:
 
