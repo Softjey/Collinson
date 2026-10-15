@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '../../generated/prisma/client.js';
+import type { Prisma } from '../../generated/prisma/client.js';
+import { upsertPlaces } from '../../generated/prisma/sql.js';
 import type { Place as PlaceRow } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../shared/database/prisma.service.js';
 import type { Place } from '../entities/place.js';
@@ -27,7 +28,7 @@ export class PlaceRepository {
 
   async saveSearch(key: SearchKey, places: Place[], fetchedAt: Date): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
-      await upsertPlaces(tx, places);
+      await storePlaces(tx, places);
       const search = await tx.placeSearch.upsert({
         where: { query_language_countryCode_resultCount: toUnique(key) },
         create: { ...toUnique(key), fetchedAt },
@@ -45,31 +46,12 @@ export class PlaceRepository {
   }
 }
 
-async function upsertPlaces(tx: Prisma.TransactionClient, places: Place[]): Promise<void> {
+async function storePlaces(tx: Prisma.TransactionClient, places: Place[]): Promise<void> {
   const rows = [...new Map(places.map((place) => [place.id, toRow(place)])).values()];
   if (rows.length === 0) {
     return;
   }
-  const values = Prisma.join(
-    rows.map(
-      (r) =>
-        Prisma.sql`(${r.id}, ${r.name}, ${r.country}, ${r.countryCode}, ${r.admin1}, ${r.latitude}, ${r.longitude}, ${r.elevationM}, ${r.timezone}, ${r.population}, now())`,
-    ),
-  );
-  await tx.$executeRaw`
-    INSERT INTO "Place" ("id", "name", "country", "countryCode", "admin1", "latitude", "longitude", "elevationM", "timezone", "population", "updatedAt")
-    VALUES ${values}
-    ON CONFLICT ("id") DO UPDATE SET
-      "name" = EXCLUDED."name",
-      "country" = EXCLUDED."country",
-      "countryCode" = EXCLUDED."countryCode",
-      "admin1" = EXCLUDED."admin1",
-      "latitude" = EXCLUDED."latitude",
-      "longitude" = EXCLUDED."longitude",
-      "elevationM" = EXCLUDED."elevationM",
-      "timezone" = EXCLUDED."timezone",
-      "population" = EXCLUDED."population",
-      "updatedAt" = now()`;
+  await tx.$queryRawTyped(upsertPlaces({ rows }));
 }
 
 function toUnique(key: SearchKey) {
