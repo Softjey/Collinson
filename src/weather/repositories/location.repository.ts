@@ -9,15 +9,15 @@ export class LocationRepository {
 
   async findOrCreate(input: Omit<LocationRef, 'id'>): Promise<LocationRef> {
     const { latE2, lonE2, timezone } = input;
-    const row = await this.prisma.location.upsert({
-      where: { latE2_lonE2: { latE2, lonE2 } },
-      create: { latE2, lonE2, timezone },
-      update: {},
-    });
-    if (row.timezone === null) {
-      await this.prisma.location.update({ where: { id: row.id }, data: { timezone } });
+    const [row] = await this.prisma.$queryRaw<{ id: number; timezone: string }[]>`
+      INSERT INTO "Location" ("latE2", "lonE2", "timezone", "updatedAt")
+      VALUES (${latE2}, ${lonE2}, ${timezone}, now())
+      ON CONFLICT ("latE2", "lonE2") DO UPDATE SET "timezone" = COALESCE("Location"."timezone", EXCLUDED."timezone")
+      RETURNING "id", "timezone"`;
+    if (!row) {
+      throw new Error('Location upsert returned no row');
     }
-    return { id: row.id, latE2, lonE2, timezone: row.timezone ?? timezone };
+    return { id: row.id, latE2, lonE2, timezone: row.timezone };
   }
 
   async updateElevation(locationId: number, elevationM: number): Promise<void> {

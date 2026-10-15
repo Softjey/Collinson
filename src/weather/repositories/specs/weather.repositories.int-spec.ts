@@ -93,6 +93,26 @@ describe('weather repositories', () => {
       expect(await prisma.location.count()).toBe(1);
     });
 
+    it('keeps the stored time zone when called with another one', async () => {
+      await locations.findOrCreate(barcelona);
+
+      const again = await locations.findOrCreate({ ...barcelona, timezone: 'UTC' });
+
+      expect(again.timezone).toBe('Europe/Madrid');
+    });
+
+    it('fills in a missing time zone', async () => {
+      const { id } = await locations.findOrCreate(barcelona);
+      await prisma.location.update({ where: { id }, data: { timezone: null } });
+
+      const again = await locations.findOrCreate(barcelona);
+
+      expect(again).toMatchObject({ id, timezone: 'Europe/Madrid' });
+      await expect(prisma.location.findUnique({ where: { id } })).resolves.toMatchObject({
+        timezone: 'Europe/Madrid',
+      });
+    });
+
     it('keeps locations that differ in one coordinate apart', async () => {
       const a = await locations.findOrCreate(barcelona);
       const b = await locations.findOrCreate({ ...barcelona, lonE2: 219 });
