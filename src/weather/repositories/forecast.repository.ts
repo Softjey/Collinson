@@ -1,21 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { PrismaClient } from '../../generated/prisma/client.js';
+import type { Prisma, PrismaClient } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../shared/database/prisma.service.js';
-import { FORECAST_PARSER_VERSION, ForecastMapper } from '../mappers/forecast.mapper.js';
-import type { ForecastData, StoredSnapshot } from '../entities/weather.types.js';
+import { FORECAST_PARSER_VERSION } from '../entities/parser-versions.js';
+import type { ForecastData } from '../entities/weather.types.js';
+
+export type ForecastSnapshotRow = Prisma.ForecastSnapshotGetPayload<{ include: { hours: true } }>;
 
 @Injectable()
 export class ForecastRepository {
-  constructor(
-    @Inject(PrismaService) private readonly prisma: PrismaClient,
-    private readonly mapper: ForecastMapper,
-  ) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaClient) {}
 
-  async insert(
-    locationId: number,
-    data: ForecastData,
-    fetchedAt: Date,
-  ): Promise<StoredSnapshot<ForecastData>> {
+  async insert(locationId: number, data: ForecastData, fetchedAt: Date): Promise<{ id: number }> {
     const { hours, ...snapshot } = data;
     const [created] = await this.prisma.$transaction([
       this.prisma.forecastSnapshot.create({
@@ -41,18 +36,14 @@ export class ForecastRepository {
             }),
           ]),
     ]);
-    return { id: created.id, fetchedAt, data };
+    return { id: created.id };
   }
 
-  async findLatest(locationId: number): Promise<StoredSnapshot<ForecastData> | null> {
-    const row = await this.prisma.forecastSnapshot.findFirst({
+  async findLatest(locationId: number): Promise<ForecastSnapshotRow | null> {
+    return this.prisma.forecastSnapshot.findFirst({
       where: { locationId },
       orderBy: [{ fetchedAt: 'desc' }, { id: 'desc' }],
       include: { hours: { orderBy: { timeUtc: 'asc' } } },
     });
-    if (!row) {
-      return null;
-    }
-    return this.mapper.toStored(row);
   }
 }

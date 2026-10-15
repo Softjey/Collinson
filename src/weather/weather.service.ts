@@ -8,11 +8,15 @@ import {
   OpenMeteoUnavailableError,
 } from '../shared/open-meteo/open-meteo.errors.js';
 import { ForecastClient } from './forecast.client.js';
-import { ForecastRepository } from './repositories/forecast.repository.js';
+import { ForecastMapper } from './mappers/forecast.mapper.js';
+import { MarineMapper } from './mappers/marine.mapper.js';
+import { ForecastRepository, type ForecastSnapshotRow } from './repositories/forecast.repository.js';
 import { decideAfterFailure, isReusable } from './utils/freshness.policy.js';
 import { LocationRepository } from './repositories/location.repository.js';
 import { MarineClient } from './marine.client.js';
-import { MarineRepository } from './repositories/marine.repository.js';
+import { MarineRepository, type MarineSnapshotRow } from './repositories/marine.repository.js';
+import type { ForecastResponse } from '../shared/open-meteo/schemas/forecast.schema.js';
+import type { MarineResponse } from '../shared/open-meteo/schemas/marine.schema.js';
 import { SingleFlight } from '../shared/single-flight.js';
 import type {
   ForecastData,
@@ -24,16 +28,17 @@ import type {
   StoredSnapshot,
 } from './entities/weather.types.js';
 
-interface SnapshotStore<T> {
-  findLatest(locationId: number): Promise<StoredSnapshot<T> | null>;
-  insert(locationId: number, data: T, fetchedAt: Date): Promise<StoredSnapshot<T>>;
+interface SnapshotStore<T, Row> {
+  findLatest(locationId: number): Promise<Row | null>;
+  insert(locationId: number, data: T, fetchedAt: Date): Promise<{ id: number }>;
 }
 
-interface Source<T> {
+interface Source<T, Response, Row> {
   name: 'forecast' | 'marine';
   refreshHours: number;
-  store: SnapshotStore<T>;
-  client: { fetch(location: LocationRef): Promise<T> };
+  store: SnapshotStore<T, Row>;
+  client: { fetch(location: LocationRef): Promise<Response> };
+  mapper: { toData(response: Response): T; toStored(row: Row): StoredSnapshot<T> };
   requiresCoverage(data: T): boolean;
 }
 
@@ -42,8 +47,8 @@ type WeatherSettings = Pick<AppConfig, 'weatherRefreshHours' | 'wavesRefreshHour
 @Injectable()
 export class WeatherService {
   private readonly flights = new SingleFlight();
-  private readonly forecast: Source<ForecastData>;
-  private readonly marine: Source<MarineData>;
+  private readonly forecast: Source<ForecastData, ForecastResponse, ForecastSnapshotRow>;
+  private readonly marine: Source<MarineData, MarineResponse, MarineSnapshotRow>;
 
   constructor(
     private readonly clock: Clock,
@@ -53,12 +58,15 @@ export class WeatherService {
     marineClient: MarineClient,
     forecastSnapshots: ForecastRepository,
     marineSnapshots: MarineRepository,
+    forecastMapper: ForecastMapper,
+    marineMapper: MarineMapper,
   ) {
     this.forecast = {
       name: 'forecast',
       refreshHours: settings.weatherRefreshHours,
       store: forecastSnapshots,
       client: forecastClient,
+      mapper: forecastMapper,
       requiresCoverage: () => true,
     };
     this.marine = {
@@ -66,6 +74,7 @@ export class WeatherService {
       refreshHours: settings.wavesRefreshHours,
       store: marineSnapshots,
       client: marineClient,
+      mapper: marineMapper,
       requiresCoverage: (data) => data.hasSea,
     };
   }
@@ -86,13 +95,14 @@ export class WeatherService {
     return this.get(this.marine, location, coverThrough);
   }
 
-  private async get<T>(
-    source: Source<T>,
+  private async get<T, Response, Row>(
+    source: Source<T, Response, Row>,
     location: LocationRef,
     coverThrough: LocalDate,
   ): Promise<SourceResult<T>> {
     const { clock, settings } = this;
-    const snapshot = await source.store.findLatest(location.id);
+    const row = await source.store.findLatest(location.id);
+    const snapshot = row && source.mapper.toStored(row);
 
     if (
       snapshot &&
@@ -110,8 +120,10 @@ export class WeatherService {
 
     try {
       const stored = await this.flights.run(`${source.name}:${location.id}`, async () => {
-        const data = await source.client.fetch(location);
-        return source.store.insert(location.id, data, clock.now());
+        const data = source.mapper.toData(await source.client.fetch(location));
+        const fetchedAt = clock.now();
+        await source.store.insert(location.id, data, fetchedAt);
+        return { data, fetchedAt };
       });
       return { status: 'ok', data: stored.data, fetchedAt: stored.fetchedAt, stale: false };
     } catch (error) {

@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { MarineResponse } from '../../../shared/open-meteo/schemas/marine.schema.js';
-import { MARINE_PARSER_VERSION, MarineMapper } from '../marine.mapper.js';
+import { MARINE_PARSER_VERSION } from '../../entities/parser-versions.js';
+import { MarineMapper } from '../marine.mapper.js';
+import type { MarineSnapshotRow } from '../../repositories/marine.repository.js';
 
 function fixture(name: string): Record<string, unknown> & { hourly: Record<string, unknown[]> } {
   const path = fileURLToPath(new URL(`../../../../test/fixtures/weather/${name}.json`, import.meta.url));
@@ -57,12 +59,19 @@ describe('MarineMapper.toStored', () => {
     const fetchedAt = new Date('2026-10-12T20:00:00Z');
 
     expect(
-      mapper.toStored({ id: 3, fetchedAt, hasSea: false, apiLatitude: null, apiLongitude: null, hours: [] }),
+      mapper.toStored({
+        id: 3,
+        fetchedAt,
+        hasSea: false,
+        apiLatitude: null,
+        apiLongitude: null,
+        hours: [],
+      } as unknown as MarineSnapshotRow),
     ).toEqual({
       id: 3,
       fetchedAt,
       data: { hasSea: false, apiLatitude: null, apiLongitude: null, hours: [] },
-    });
+    } as unknown as MarineSnapshotRow);
   });
 
   it('drops the snapshot id from the hours', () => {
@@ -83,7 +92,7 @@ describe('MarineMapper.toStored', () => {
           swellWavePeriod: null,
         },
       ],
-    });
+    } as unknown as MarineSnapshotRow);
 
     expect(stored.data.hours[0]).not.toHaveProperty('snapshotId');
     expect(stored.data.hours[0]).toMatchObject({ waveHeight: 0.6, waveDirection: 120 });

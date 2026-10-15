@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { ForecastResponse } from '../../../shared/open-meteo/schemas/forecast.schema.js';
-import { FORECAST_PARSER_VERSION, ForecastMapper } from '../forecast.mapper.js';
+import { FORECAST_PARSER_VERSION } from '../../entities/parser-versions.js';
+import { ForecastMapper } from '../forecast.mapper.js';
+import type { ForecastSnapshotRow } from '../../repositories/forecast.repository.js';
 
 function fixture(): Record<string, unknown> & { hourly: Record<string, unknown[]> } {
   const path = fileURLToPath(
@@ -79,7 +81,7 @@ describe('ForecastMapper.toStored', () => {
       elevationM: 12,
       utcOffsetSeconds: 7200,
       hours: [hour],
-    });
+    } as unknown as ForecastSnapshotRow);
 
     expect(stored).toMatchObject({ id: 7, fetchedAt, data: { apiLatitude: 41.4, elevationM: 12 } });
     expect(stored.data.hours).toHaveLength(1);

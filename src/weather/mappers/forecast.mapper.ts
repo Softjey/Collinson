@@ -1,22 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type { ForecastHour as ForecastHourRow } from '../../generated/prisma/client.js';
 import type { ForecastResponse } from '../../shared/open-meteo/schemas/forecast.schema.js';
 import type { ForecastData, StoredSnapshot } from '../entities/weather.types.js';
+import type { ForecastSnapshotRow } from '../repositories/forecast.repository.js';
 import { unixToDate } from './convert.js';
-
-// Bump when the mapping from the Forecast response to stored columns changes (new or renamed variable,
-// unit change, different time handling), so rows written by older logic can be told apart.
-export const FORECAST_PARSER_VERSION = 1;
-
-export interface ForecastSnapshotRow {
-  id: number;
-  fetchedAt: Date;
-  apiLatitude: number;
-  apiLongitude: number;
-  elevationM: number | null;
-  utcOffsetSeconds: number;
-  hours: ForecastHourRow[];
-}
 
 @Injectable()
 export class ForecastMapper {

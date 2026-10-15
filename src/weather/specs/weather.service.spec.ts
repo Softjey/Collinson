@@ -12,6 +12,8 @@ import type {
   SourceResult,
   StoredSnapshot,
 } from '../entities/weather.types.js';
+import type { ForecastMapper } from '../mappers/forecast.mapper.js';
+import type { MarineMapper } from '../mappers/marine.mapper.js';
 import type { ForecastClient } from '../forecast.client.js';
 import type { ForecastRepository } from '../repositories/forecast.repository.js';
 import type { LocationRepository } from '../repositories/location.repository.js';
@@ -62,6 +64,8 @@ function snapshotStore<T>(initial: Record<number, StoredSnapshot<T>> = {}) {
   };
 }
 
+const identityMapper = { toData: (response: unknown) => response, toStored: (row: unknown) => row };
+
 function setup(
   options: {
     forecast?: StoredSnapshot<ForecastData>;
@@ -86,6 +90,8 @@ function setup(
     marineClient as unknown as MarineClient,
     forecastSnapshots as unknown as ForecastRepository,
     marineSnapshots as unknown as MarineRepository,
+    identityMapper as unknown as ForecastMapper,
+    identityMapper as unknown as MarineMapper,
   );
   return { service, forecastSnapshots, marineSnapshots, forecastClient, marineClient, locations };
 }

@@ -1,21 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type { MarineHour as MarineHourRow } from '../../generated/prisma/client.js';
 import type { MarineResponse } from '../../shared/open-meteo/schemas/marine.schema.js';
 import type { MarineData, StoredSnapshot } from '../entities/weather.types.js';
+import type { MarineSnapshotRow } from '../repositories/marine.repository.js';
 import { unixToDate } from './convert.js';
-
-// Bump when the mapping from the Marine response to stored columns changes (new or renamed variable,
-// unit change, different rule for hasSea), so rows written by older logic can be told apart.
-export const MARINE_PARSER_VERSION = 1;
-
-export interface MarineSnapshotRow {
-  id: number;
-  fetchedAt: Date;
-  hasSea: boolean;
-  apiLatitude: number | null;
-  apiLongitude: number | null;
-  hours: MarineHourRow[];
-}
 
 @Injectable()
 export class MarineMapper {

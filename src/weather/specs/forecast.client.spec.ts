@@ -6,7 +6,6 @@ import {
   OpenMeteoUnavailableError,
 } from '../../shared/open-meteo/open-meteo.errors.js';
 import type { OpenMeteoService } from '../../shared/open-meteo/open-meteo.service.js';
-import { ForecastMapper } from '../mappers/forecast.mapper.js';
 import { ForecastClient } from '../forecast.client.js';
 
 function fixture(): Record<string, unknown> & { hourly: Record<string, unknown[]> } {
@@ -24,7 +23,7 @@ function clientReturning(response: unknown) {
       return response;
     },
   } as unknown as OpenMeteoService;
-  return { client: new ForecastClient(service, new ForecastMapper()), calls };
+  return { client: new ForecastClient(service), calls };
 }
 
 const location = { latE2: 4140, lonE2: 218, timezone: 'Europe/Madrid' };
@@ -61,7 +60,7 @@ describe('ForecastClient', () => {
         },
       } as unknown as OpenMeteoService;
 
-      await expect(new ForecastClient(service, new ForecastMapper()).fetch(location)).rejects.toBe(error);
+      await expect(new ForecastClient(service).fetch(location)).rejects.toBe(error);
     });
   });
 });
