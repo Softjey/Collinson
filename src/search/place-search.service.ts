@@ -6,23 +6,23 @@ import type { AppConfig } from '../shared/config/env.schema.js';
 import { GeocodingClient } from './geocoding.client.js';
 import type { Place } from './entities/place.js';
 import { PlaceRepository } from './repositories/place.repository.js';
-import type { StoredSearch } from './entities/stored-search.js';
+import type { StoredPlaceSearch } from './entities/stored-place-search.js';
 import { PlaceSearchMapper } from './mappers/place-search.mapper.js';
-import { SearchKeyMapper } from './mappers/search-key.mapper.js';
+import { PlaceSearchKeyMapper } from './mappers/place-search-key.mapper.js';
 import type { SearchLocationsArgs } from './entities/search-locations.args.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 @Injectable()
-export class SearchService {
-  private readonly logger = new Logger(SearchService.name);
+export class PlaceSearchService {
+  private readonly logger = new Logger(PlaceSearchService.name);
 
   constructor(
     private readonly geocodingClient: GeocodingClient,
     private readonly placeRepository: PlaceRepository,
     @Inject(APP_CONFIG) private readonly appConfig: AppConfig,
     private readonly clock: Clock,
-    private readonly searchKeyMapper: SearchKeyMapper,
+    private readonly searchKeyMapper: PlaceSearchKeyMapper,
     private readonly placeSearchMapper: PlaceSearchMapper,
   ) {}
 
@@ -50,7 +50,7 @@ export class SearchService {
     }
   }
 
-  private isFresh(stored: StoredSearch): boolean {
+  private isFresh(stored: StoredPlaceSearch): boolean {
     return (
       this.clock.now().getTime() - stored.fetchedAt.getTime() < this.appConfig.placeSearchCacheDays * DAY_MS
     );

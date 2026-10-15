@@ -2,12 +2,12 @@ import { createTestPrisma, truncateAll } from '../../../../test/support/database
 import type { PrismaClient } from '../../../generated/prisma/client.js';
 import type { PrismaService } from '../../../shared/database/prisma.service.js';
 import type { Place } from '../../entities/place.js';
-import type { SearchKey } from '../../mappers/search-key.mapper.js';
+import type { PlaceSearchKey } from '../../mappers/place-search-key.mapper.js';
 import { PlaceRepository } from '../place.repository.js';
 import { PlaceSearchMapper } from '../../mappers/place-search.mapper.js';
-import { SearchKeyMapper } from '../../mappers/search-key.mapper.js';
+import { PlaceSearchKeyMapper } from '../../mappers/place-search-key.mapper.js';
 
-const searchKey = new SearchKeyMapper().toKey.bind(new SearchKeyMapper());
+const searchKey = new PlaceSearchKeyMapper().toKey.bind(new PlaceSearchKeyMapper());
 
 function place(id: number, overrides: Partial<Place> = {}): Place {
   return {
@@ -28,7 +28,7 @@ function place(id: number, overrides: Partial<Place> = {}): Place {
 describe('PlaceRepository', () => {
   let prisma: PrismaClient;
   let repository: PlaceRepository;
-  const find = async (searchKey: SearchKey) => {
+  const find = async (searchKey: PlaceSearchKey) => {
     const row = await repository.findSearch(searchKey);
     return row && new PlaceSearchMapper().toStoredSearch(row);
   };

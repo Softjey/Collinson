@@ -1,6 +1,6 @@
 import type { Place } from './place.js';
 
-export interface StoredSearch {
+export interface StoredPlaceSearch {
   fetchedAt: Date;
   places: Place[];
 }

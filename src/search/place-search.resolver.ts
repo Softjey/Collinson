@@ -1,11 +1,11 @@
 import { Args, Query, Resolver } from '@nestjs/graphql';
 import { SearchLocationsArgs } from './entities/search-locations.args.js';
 import type { Place } from './entities/place.js';
-import { SearchService } from './search.service.js';
+import { PlaceSearchService } from './place-search.service.js';
 
 @Resolver()
-export class SearchResolver {
-  constructor(private readonly searchService: SearchService) {}
+export class PlaceSearchResolver {
+  constructor(private readonly searchService: PlaceSearchService) {}
 
   @Query('searchLocations')
   searchLocations(@Args() args: SearchLocationsArgs): Promise<Place[]> {

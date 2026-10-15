@@ -3,20 +3,20 @@ import { ClockModule } from '../shared/clock.module.js';
 import { OpenMeteoModule } from '../shared/open-meteo/open-meteo.module.js';
 import { GeocodingClient } from './geocoding.client.js';
 import { PlaceSearchMapper } from './mappers/place-search.mapper.js';
-import { SearchKeyMapper } from './mappers/search-key.mapper.js';
+import { PlaceSearchKeyMapper } from './mappers/place-search-key.mapper.js';
 import { PlaceRepository } from './repositories/place.repository.js';
-import { SearchResolver } from './search.resolver.js';
-import { SearchService } from './search.service.js';
+import { PlaceSearchResolver } from './place-search.resolver.js';
+import { PlaceSearchService } from './place-search.service.js';
 
 @Module({
   imports: [OpenMeteoModule, ClockModule],
   providers: [
-    SearchResolver,
-    SearchService,
+    PlaceSearchResolver,
+    PlaceSearchService,
     GeocodingClient,
     PlaceRepository,
     PlaceSearchMapper,
-    SearchKeyMapper,
+    PlaceSearchKeyMapper,
   ],
 })
-export class SearchModule {}
+export class PlaceSearchModule {}

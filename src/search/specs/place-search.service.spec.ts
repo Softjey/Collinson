@@ -3,13 +3,13 @@ import type { AppConfig } from '../../shared/config/env.schema.js';
 import type { Clock } from '../../shared/clock.js';
 import type { GeocodingClient } from '../geocoding.client.js';
 import type { Place } from '../entities/place.js';
-import type { StoredSearch } from '../entities/stored-search.js';
+import type { StoredPlaceSearch } from '../entities/stored-place-search.js';
 import type { PlaceSearchMapper } from '../mappers/place-search.mapper.js';
 import type { PlaceRepository } from '../repositories/place.repository.js';
-import { SearchKeyMapper } from '../mappers/search-key.mapper.js';
-import { SearchService } from '../search.service.js';
+import { PlaceSearchKeyMapper } from '../mappers/place-search-key.mapper.js';
+import { PlaceSearchService } from '../place-search.service.js';
 
-const keys = new SearchKeyMapper();
+const keys = new PlaceSearchKeyMapper();
 const searchKey = keys.toKey.bind(keys);
 const DAY_MS = 24 * 60 * 60 * 1000;
 const NOW = new Date('2026-01-31T12:00:00Z');
@@ -30,11 +30,11 @@ function place(id: number): Place {
   };
 }
 
-function stored(ageDays: number): StoredSearch {
+function stored(ageDays: number): StoredPlaceSearch {
   return { fetchedAt: new Date(NOW.getTime() - ageDays * DAY_MS), places: [place(1)] };
 }
 
-function createService(options: { stored?: StoredSearch | null; geocoderError?: Error } = {}) {
+function createService(options: { stored?: StoredPlaceSearch | null; geocoderError?: Error } = {}) {
   const search = jest.fn<GeocodingClient['search']>();
   if (options.geocoderError) {
     search.mockRejectedValue(options.geocoderError);
@@ -46,7 +46,7 @@ function createService(options: { stored?: StoredSearch | null; geocoderError?: 
     .mockResolvedValue((options.stored ?? null) as never);
   const saveSearch = jest.fn<PlaceRepository['saveSearch']>().mockResolvedValue();
   const clock: Clock = { now: () => NOW };
-  const service = new SearchService(
+  const service = new PlaceSearchService(
     { search } as unknown as GeocodingClient,
     { findSearch, saveSearch } as unknown as PlaceRepository,
     { placeSearchCacheDays: 30 } as AppConfig,
@@ -57,7 +57,7 @@ function createService(options: { stored?: StoredSearch | null; geocoderError?: 
   return { service, search, findSearch, saveSearch };
 }
 
-describe('SearchService', () => {
+describe('PlaceSearchService', () => {
   it('returns a fresh stored search without calling the geocoder', async () => {
     const { service, search, saveSearch } = createService({ stored: stored(29) });
 
