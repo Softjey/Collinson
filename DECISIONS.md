@@ -27,6 +27,8 @@ Formulas, tables, data and the full design are in [docs/technical-spec.md](docs/
 - **Thermal comfort uses humidex with mean humidity**, as in the authors' 2020 update of HCI, not effective
   temperature. Why: the effective temperature formula is not printed in the original paper, and it rates 42 C dry
   heat as 6 out of 10 while humidex rates it 0.
+- **Skiing curves are simplified to piecewise linear curves** through points taken from the paper's curves,
+  instead of its polynomials and extreme value function.
 - **Surfing assumes a general or intermediate surfer**, with no skill parameter.
 - **Additions made after validating on historical days:** outdoor is capped at 0.5 from 6 mm of daily
   precipitation and at 0.2 from 60 km/h maximum wind or 25 mm; skiing is multiplied by

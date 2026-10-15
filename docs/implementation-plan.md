@@ -157,8 +157,8 @@ interface ScoringService {
 
 An activity is a record, not a class: its sources, gates (the conditions that make a day unscored), factors
 (feature, curve, weight), combiner (`weightedSum` or `geometric`), multipliers and caps. A single function,
-`scoreFeatures(definition, features)`, reads the record and computes the score. Curve kinds (`piecewise`, `steps`,
-`polynomial`, `peakNormalizedGev`), derived features (`humidex`, `divide`) and combiners are small registries.
+`scoreFeatures(definition, features)`, reads the record and computes the score. Curve kinds (`piecewise`,
+`steps`), derived features (`humidex`, `divide`) and combiners are small registries.
 Indoor sightseeing is a record that is based on the outdoor one (`0.5 + 0.5 * (1 - outdoor)`).
 
 Adding an activity: add its name to `ACTIVITIES` and to the contract enum, then add a record to

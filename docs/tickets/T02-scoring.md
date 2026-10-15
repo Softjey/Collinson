@@ -91,7 +91,7 @@ Skiing:
 - `uSnow` at 0 hours, at 5 hours and 0 above 5; `uWind` with the km/h to m/s conversion; `uTemp` is 1 near
   3 C and 0 below about -12 C and above about 15 C; `uCloud` is 1 at 25% and 0 at 100%.
 - Rain multiplier: 1 at 0 mm, 0 at 3 mm and above. Depth multiplier: linear to 0.3 m, 1 above.
-- Fixtures: Beaver Creek 2022-12-02 is 0.46, 2023-12-01 is 0.13, 2023-12-02 is 0.14.
+- Fixtures: Beaver Creek 2022-12-02 is 0.45, 2023-12-01 is 0.13, 2023-12-02 is 0.14.
 - Missing features give `NO_DATA`, checked before `NO_SNOW`.
 
 Surfing:
