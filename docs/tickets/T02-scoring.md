@@ -29,7 +29,7 @@ Touches only `src/scoring/` and `test/fixtures/scoring/`.
 - `entities/definition.types.ts`: the types of a formula record, `DayContext` and `DayOutcome` as in plan section 3.3.
 - `entities/activity-definitions.ts`: the four activity records with every weight, threshold, table and anchor of
   spec section 8 in one place.
-- `utils/score-day.ts`: `scoreDay(definition, day)`, the only function that computes a score. Curve kinds,
+- `utils/score-day.ts`: `scoreFeatures(definition, features)`, the only function that computes a score. Curve kinds,
   derived features and combiners are registries in `utils/`.
 - `utils/definition-lookup.ts`: lookup by activity and the union of required sources for a set of activities.
 - `mappers/feature-values.mapper.ts`: `FeatureValuesMapper` flattens a `DayContext` into the feature record the formulas read.
