@@ -1,6 +1,8 @@
-import { toSearchKey as searchKey } from '../search-key.mapper.js';
+import { SearchKeyMapper } from '../search-key.mapper.js';
 
-describe('searchKey', () => {
+const searchKey = new SearchKeyMapper().toKey.bind(new SearchKeyMapper());
+
+describe('SearchKeyMapper.toKey', () => {
   const base = { name: 'Zakopane', count: 10, language: 'en' };
 
   it('treats surrounding spaces and case as the same key', () => {

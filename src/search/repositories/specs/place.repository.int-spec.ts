@@ -3,7 +3,10 @@ import type { PrismaClient } from '../../../generated/prisma/client.js';
 import type { PrismaService } from '../../../shared/database/prisma.service.js';
 import type { Place } from '../../entities/place.js';
 import { PlaceRepository } from '../place.repository.js';
-import { toSearchKey as searchKey } from '../../mappers/search-key.mapper.js';
+import { PlaceSearchMapper } from '../../mappers/place-search.mapper.js';
+import { SearchKeyMapper } from '../../mappers/search-key.mapper.js';
+
+const searchKey = new SearchKeyMapper().toKey.bind(new SearchKeyMapper());
 
 function place(id: number, overrides: Partial<Place> = {}): Place {
   return {
@@ -28,7 +31,7 @@ describe('PlaceRepository', () => {
 
   beforeAll(() => {
     prisma = createTestPrisma();
-    repository = new PlaceRepository(prisma as unknown as PrismaService);
+    repository = new PlaceRepository(prisma as unknown as PrismaService, new PlaceSearchMapper());
   });
 
   beforeEach(async () => {

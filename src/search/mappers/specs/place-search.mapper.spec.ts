@@ -1,4 +1,4 @@
-import { toStoredSearch, type PlaceSearchWithPlaces } from '../place-search.mapper.js';
+import { PlaceSearchMapper, type PlaceSearchWithPlaces } from '../place-search.mapper.js';
 
 const place = (id: number) => ({
   id,
@@ -25,15 +25,17 @@ const row = (ids: number[]): PlaceSearchWithPlaces => ({
   hits: ids.map((id) => ({ place: place(id) })),
 });
 
-describe('toStoredSearch', () => {
+const mapper = new PlaceSearchMapper();
+
+describe('PlaceSearchMapper.toStoredSearch', () => {
   it('keeps the fetch time and the order of the hits', () => {
-    expect(toStoredSearch(row([3, 1, 2]))).toEqual({
+    expect(mapper.toStoredSearch(row([3, 1, 2]))).toEqual({
       fetchedAt: new Date('2026-01-01T00:00:00Z'),
       places: [place(3), place(1), place(2)],
     });
   });
 
   it('maps a search without hits to an empty list', () => {
-    expect(toStoredSearch(row([])).places).toEqual([]);
+    expect(mapper.toStoredSearch(row([])).places).toEqual([]);
   });
 });

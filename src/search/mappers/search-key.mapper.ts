@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import type { SearchLocationsArgs } from '../entities/search-locations.args.js';
 
 export interface SearchKey {
@@ -7,11 +8,14 @@ export interface SearchKey {
   resultCount: number;
 }
 
-export function toSearchKey({ name, language, countryCode, count }: SearchLocationsArgs): SearchKey {
-  return {
-    query: name.trim().toLowerCase(),
-    language,
-    countryCode: countryCode ?? '',
-    resultCount: count,
-  };
+@Injectable()
+export class SearchKeyMapper {
+  toKey({ name, language, countryCode, count }: SearchLocationsArgs): SearchKey {
+    return {
+      query: name.trim().toLowerCase(),
+      language,
+      countryCode: countryCode ?? '',
+      resultCount: count,
+    };
+  }
 }

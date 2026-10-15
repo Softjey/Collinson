@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import type { Prisma } from '../../generated/prisma/client.js';
 import type { Place } from '../entities/place.js';
 
@@ -25,7 +26,9 @@ export interface StoredSearch {
   places: Place[];
 }
 
-export const toStoredSearch = ({ fetchedAt, hits }: PlaceSearchWithPlaces): StoredSearch => ({
-  fetchedAt,
-  places: hits.map((hit) => hit.place),
-});
+@Injectable()
+export class PlaceSearchMapper {
+  toStoredSearch({ fetchedAt, hits }: PlaceSearchWithPlaces): StoredSearch {
+    return { fetchedAt, places: hits.map((hit) => hit.place) };
+  }
+}

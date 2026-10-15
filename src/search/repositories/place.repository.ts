@@ -3,21 +3,28 @@ import type { Prisma } from '../../generated/prisma/client.js';
 import { upsertPlaces } from '../../generated/prisma/sql.js';
 import { PrismaService } from '../../shared/database/prisma.service.js';
 import type { Place } from '../entities/place.js';
-import { toStoredSearch, placeSearchWithPlaces, type StoredSearch } from '../mappers/place-search.mapper.js';
+import {
+  PlaceSearchMapper,
+  placeSearchWithPlaces,
+  type StoredSearch,
+} from '../mappers/place-search.mapper.js';
 import type { SearchKey } from '../mappers/search-key.mapper.js';
 
 const uniqueKey = (key: SearchKey) => ({ query_language_countryCode_resultCount: key });
 
 @Injectable()
 export class PlaceRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mapper: PlaceSearchMapper,
+  ) {}
 
   async findSearch(key: SearchKey): Promise<StoredSearch | null> {
     const search = await this.prisma.placeSearch.findUnique({
       where: uniqueKey(key),
       include: placeSearchWithPlaces,
     });
-    return search && toStoredSearch(search);
+    return search && this.mapper.toStoredSearch(search);
   }
 
   async saveSearch(key: SearchKey, places: Place[], fetchedAt: Date): Promise<void> {

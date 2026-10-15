@@ -5,9 +5,11 @@ import type { GeocodingClient } from '../geocoding.client.js';
 import type { Place } from '../entities/place.js';
 import type { StoredSearch } from '../mappers/place-search.mapper.js';
 import type { PlaceRepository } from '../repositories/place.repository.js';
-import { toSearchKey as searchKey } from '../mappers/search-key.mapper.js';
+import { SearchKeyMapper } from '../mappers/search-key.mapper.js';
 import { SearchService } from '../search.service.js';
 
+const keys = new SearchKeyMapper();
+const searchKey = keys.toKey.bind(keys);
 const DAY_MS = 24 * 60 * 60 * 1000;
 const NOW = new Date('2026-01-31T12:00:00Z');
 const input = { name: '  Zakopane ', count: 10, language: 'en' };
@@ -46,6 +48,7 @@ function createService(options: { stored?: StoredSearch | null; geocoderError?: 
     { findSearch, saveSearch } as unknown as PlaceRepository,
     { placeSearchCacheDays: 30 } as AppConfig,
     clock,
+    keys,
   );
   return { service, search, findSearch, saveSearch };
 }
