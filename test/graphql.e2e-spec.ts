@@ -2,9 +2,9 @@ import { readFileSync } from 'node:fs';
 import { jest } from '@jest/globals';
 import { GraphQLSchemaHost } from '@nestjs/graphql';
 import { buildSchema, parse, print, printSchema, visit } from 'graphql';
-import request from 'supertest';
 import { PlaceRepository } from '../src/search/repositories/place.repository.js';
-import { createTestApp, type TestApp } from './support/app.js';
+import { graphqlRequest, useTestApp } from './support/app.js';
+import { ACTIVITY_SCORES, SEARCH_LOCATIONS } from './support/queries.js';
 
 const contract = readFileSync(new URL('../contracts/graphql/schema.graphql', import.meta.url), 'utf8');
 
@@ -16,29 +16,11 @@ function withoutDescriptions(sdl: string): string {
   );
 }
 
-const ACTIVITY_SCORES = `
-  query ($input: ActivityScoresInput!) {
-    activityScores(input: $input) { location { latitude } }
-  }`;
-
-const SEARCH = `
-  query ($name: String!, $count: Int) {
-    searchLocations(name: $name, count: $count) { id name }
-  }`;
-
 describe('GraphQL API', () => {
-  let testApp: TestApp;
-
-  beforeAll(async () => {
-    testApp = await createTestApp();
-  });
-
-  afterAll(async () => {
-    await testApp.app.close();
-  });
+  const testApp = useTestApp();
 
   const post = (query: string, variables: Record<string, unknown>) =>
-    request(testApp.app.getHttpServer()).post('/graphql').send({ query, variables });
+    graphqlRequest(testApp, query, variables);
 
   const validInput = {
     latitude: 41.85,
@@ -93,13 +75,13 @@ describe('GraphQL API', () => {
     });
 
     it.each([0, 101, -1])('rejects a place search count of %s', async (count) => {
-      const response = await post(SEARCH, { name: 'Rome', count });
+      const response = await post(SEARCH_LOCATIONS, { name: 'Rome', count });
 
       expect(response.body.errors[0].extensions.code).toBe('BAD_USER_INPUT');
     });
 
     it('rejects a place search without a name', async () => {
-      const response = await post(SEARCH, { name: '', count: 5 });
+      const response = await post(SEARCH_LOCATIONS, { name: '', count: 5 });
 
       expect(response.body.errors[0].extensions.code).toBe('BAD_USER_INPUT');
     });
@@ -117,7 +99,7 @@ describe('GraphQL API', () => {
         .spyOn(testApp.app.get(PlaceRepository), 'findSearch')
         .mockRejectedValueOnce(new Error('connection string with secret'));
 
-      const response = await post(SEARCH, { name: 'Rome', count: 5 });
+      const response = await post(SEARCH_LOCATIONS, { name: 'Rome', count: 5 });
 
       failure.mockRestore();
       expect(response.body.errors[0].message).toBe('Internal server error');
@@ -125,7 +107,7 @@ describe('GraphQL API', () => {
     });
 
     it('never calls Open-Meteo for a request that failed validation', async () => {
-      await post(SEARCH, { name: 'Rome', count: 0 });
+      await post(SEARCH_LOCATIONS, { name: 'Rome', count: 0 });
 
       expect(testApp.openMeteo.calls).toHaveLength(0);
     });

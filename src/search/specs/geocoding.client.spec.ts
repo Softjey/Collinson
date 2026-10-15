@@ -1,10 +1,10 @@
 import { jest } from '@jest/globals';
 import type { OpenMeteoService } from '../../shared/open-meteo/open-meteo.service.js';
 import type { Place } from '../entities/place.js';
+import { buildPlace } from '../../../test/support/builders/place.js';
 import { GeocodingClient } from '../geocoding.client.js';
 
-const place: Place = {
-  id: 3080165,
+const place = buildPlace(3080165, {
   name: 'Zakopane',
   country: 'Poland',
   countryCode: 'PL',
@@ -14,7 +14,7 @@ const place: Place = {
   elevation: 838,
   timezone: 'Europe/Warsaw',
   population: 27266,
-};
+});
 
 function createClient(results: Place[]) {
   const geocoding = jest
@@ -26,7 +26,7 @@ function createClient(results: Place[]) {
 
 describe('GeocodingClient', () => {
   it('returns the places in the order of the response', async () => {
-    const { client } = createClient([place, { ...place, id: 7531875 }]);
+    const { client } = createClient([place, buildPlace(7531875)]);
 
     const places = await client.search({ name: 'Zakopane', count: 2, language: 'en' });
 
