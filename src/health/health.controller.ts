@@ -9,7 +9,7 @@ export class HealthController {
   @Get()
   async check(): Promise<{ status: 'ok' }> {
     try {
-      await this.prisma.$queryRawTyped(checkConnection());
+      await this.prismaService.$queryRawTyped(checkConnection());
     } catch {
       throw new ServiceUnavailableException({ status: 'error' });
     }

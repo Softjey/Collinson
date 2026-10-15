@@ -24,7 +24,7 @@ export class OpenMeteoHttpClient {
 
   get(params: QueryParams): Promise<unknown> {
     return retry(() => this.request(params), {
-      retries: this.options.retries,
+      retries: this.openMeteoHttpOptions.retries,
       shouldRetry: (error) => error instanceof OpenMeteoUnavailableError,
     });
   }
@@ -37,8 +37,8 @@ export class OpenMeteoHttpClient {
   private async send(params: QueryParams): Promise<AxiosResponse> {
     try {
       return await firstValueFrom(
-        this.http.get(this.options.baseUrl, {
-          params: { ...params, apikey: this.options.apiKey },
+        this.httpService.get(this.openMeteoHttpOptions.baseUrl, {
+          params: { ...params, apikey: this.openMeteoHttpOptions.apiKey },
           validateStatus: () => true,
         }),
       );
