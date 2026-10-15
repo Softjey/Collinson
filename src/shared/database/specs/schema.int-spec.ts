@@ -1,3 +1,4 @@
+import { listPublicTables } from '../../../generated/prisma/sql.js';
 import { createTestPrisma, truncateAll } from '../../../../test/support/database.js';
 import type { PrismaClient } from '../../../generated/prisma/client.js';
 
@@ -17,9 +18,8 @@ describe('database schema', () => {
   });
 
   it('has been created by the migrations', async () => {
-    const rows = await prisma.$queryRaw<{ table_name: string }[]>`
-      SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`;
-    const tables = rows.map((row) => row.table_name);
+    const rows = await prisma.$queryRawTyped(listPublicTables());
+    const tables = rows.map((row) => row.tableName);
 
     expect(tables).toEqual(
       expect.arrayContaining([

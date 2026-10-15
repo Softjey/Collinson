@@ -1,4 +1,5 @@
 import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
+import { checkConnection } from '../generated/prisma/sql.js';
 import { PrismaService } from '../shared/database/prisma.service.js';
 
 @Controller('health')
@@ -8,7 +9,7 @@ export class HealthController {
   @Get()
   async check(): Promise<{ status: 'ok' }> {
     try {
-      await this.prisma.$queryRaw`SELECT 1`;
+      await this.prisma.$queryRawTyped(checkConnection());
     } catch {
       throw new ServiceUnavailableException({ status: 'error' });
     }
