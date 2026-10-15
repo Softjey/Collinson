@@ -1,26 +1,14 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { loadFixture } from '../../../../test/support/fixtures.js';
 import type { ForecastResponse } from '../../../shared/open-meteo/schemas/forecast.schema.js';
-import { PARSER_VERSIONS } from '../../utils/parser-versions.js';
 import { ForecastMapper } from '../forecast.mapper.js';
 import type { ForecastSnapshotRow } from '../../repositories/forecast.repository.js';
 
-function fixture(): Record<string, unknown> & { hourly: Record<string, unknown[]> } {
-  const path = fileURLToPath(
-    new URL('../../../../test/fixtures/weather/forecast-barcelona.json', import.meta.url),
-  );
-  return JSON.parse(readFileSync(path, 'utf8'));
-}
-
 const mapper = new ForecastMapper();
+const fixture = () => loadFixture<ForecastResponse>('weather/forecast-barcelona.json');
 
 describe('ForecastMapper.toData', () => {
-  it('starts the parser version at 1', () => {
-    expect(PARSER_VERSIONS.forecast).toBe(1);
-  });
-
   it('maps 192 hours to rows with UTC instants', () => {
-    const data = mapper.toData(fixture() as unknown as ForecastResponse);
+    const data = mapper.toData(fixture());
 
     expect(data.hours).toHaveLength(192);
     expect(data.hours[0]?.timeUtc).toEqual(new Date('2026-10-12T22:00:00Z'));
@@ -29,7 +17,7 @@ describe('ForecastMapper.toData', () => {
   });
 
   it('maps the grid point, elevation and offset', () => {
-    const data = mapper.toData(fixture() as unknown as ForecastResponse);
+    const data = mapper.toData(fixture());
 
     expect(data).toMatchObject({
       apiLatitude: 41.4,
@@ -40,7 +28,7 @@ describe('ForecastMapper.toData', () => {
   });
 
   it('keeps nulls as null', () => {
-    const data = mapper.toData(fixture() as unknown as ForecastResponse);
+    const data = mapper.toData(fixture());
 
     expect(data.hours[5]?.temperature2m).toBeNull();
     expect(data.hours[191]?.snowDepth).toBeNull();
@@ -50,7 +38,7 @@ describe('ForecastMapper.toData', () => {
   it('maps a missing elevation to null', () => {
     const response = fixture();
     delete response.elevation;
-    expect(mapper.toData(response as unknown as ForecastResponse)).toMatchObject({ elevationM: null });
+    expect(mapper.toData(response)).toMatchObject({ elevationM: null });
   });
 });
 

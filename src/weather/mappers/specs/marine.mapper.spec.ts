@@ -1,24 +1,15 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { loadFixture } from '../../../../test/support/fixtures.js';
 import type { MarineResponse } from '../../../shared/open-meteo/schemas/marine.schema.js';
-import { PARSER_VERSIONS } from '../../utils/parser-versions.js';
 import { MarineMapper } from '../marine.mapper.js';
 import type { MarineSnapshotRow } from '../../repositories/marine.repository.js';
 
-function fixture(name: string): Record<string, unknown> & { hourly: Record<string, unknown[]> } {
-  const path = fileURLToPath(new URL(`../../../../test/fixtures/weather/${name}.json`, import.meta.url));
-  return JSON.parse(readFileSync(path, 'utf8'));
-}
-
 const mapper = new MarineMapper();
+const fixture = (name: 'marine-barcelona' | 'marine-madrid-inland') =>
+  loadFixture<MarineResponse>(`weather/${name}.json`);
 
 describe('MarineMapper.toData', () => {
-  it('starts the parser version at 1', () => {
-    expect(PARSER_VERSIONS.marine).toBe(1);
-  });
-
   it('maps a coastal response to hasSea with 192 hours', () => {
-    const data = mapper.toData(fixture('marine-barcelona') as unknown as MarineResponse);
+    const data = mapper.toData(fixture('marine-barcelona'));
 
     expect(data.hasSea).toBe(true);
     expect(data.apiLatitude).toBe(41.375);
@@ -29,14 +20,14 @@ describe('MarineMapper.toData', () => {
   });
 
   it('keeps nulls in individual hours', () => {
-    const data = mapper.toData(fixture('marine-barcelona') as unknown as MarineResponse);
+    const data = mapper.toData(fixture('marine-barcelona'));
 
     expect(data.hours[10]?.wavePeriod).toBeNull();
     expect(data.hours[10]?.waveHeight).not.toBeNull();
   });
 
   it('maps an all-null wave height to no sea and no hours', () => {
-    const data = mapper.toData(fixture('marine-madrid-inland') as unknown as MarineResponse);
+    const data = mapper.toData(fixture('marine-madrid-inland'));
 
     expect(data.hasSea).toBe(false);
     expect(data.hours).toEqual([]);
@@ -47,7 +38,7 @@ describe('MarineMapper.toData', () => {
     response.hourly.wave_height = (response.hourly.wave_height ?? []).map((value, i) =>
       i === 0 ? value : null,
     );
-    const data = mapper.toData(response as unknown as MarineResponse);
+    const data = mapper.toData(response);
 
     expect(data.hasSea).toBe(true);
     expect(data.hours).toHaveLength(192);

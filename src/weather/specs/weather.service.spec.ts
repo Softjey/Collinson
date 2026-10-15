@@ -4,6 +4,11 @@ import {
   OpenMeteoRateLimitedError,
   OpenMeteoUnavailableError,
 } from '../../shared/open-meteo/open-meteo.errors.js';
+import {
+  buildForecastData,
+  buildLocationRef,
+  buildMarineData,
+} from '../../../test/support/builders/weather.js';
 import type { Clock } from '../../shared/clock.js';
 import type {
   ForecastData,
@@ -25,19 +30,13 @@ const HOUR = 3_600_000;
 const NOW = new Date('2026-10-13T12:00:00Z');
 const hoursAgo = (hours: number) => new Date(NOW.getTime() - hours * HOUR);
 
-const location: LocationRef = { id: 1, latE2: 4140, lonE2: 218, timezone: 'Europe/Madrid' };
-const otherLocation: LocationRef = { id: 2, latE2: 4850, lonE2: 235, timezone: 'Europe/Paris' };
+const location = buildLocationRef();
+const otherLocation = buildLocationRef({ id: 2, latE2: 4850, lonE2: 235, timezone: 'Europe/Paris' });
 
-const forecastData: ForecastData = {
-  apiLatitude: 41.4,
-  apiLongitude: 2.18,
-  elevationM: 12,
-  utcOffsetSeconds: 7200,
-  hours: [],
-};
-const freshForecastData: ForecastData = { ...forecastData, apiLatitude: 99 };
-const seaData: MarineData = { hasSea: true, apiLatitude: 41.37, apiLongitude: 2.2, hours: [] };
-const inlandData: MarineData = { hasSea: false, apiLatitude: 40.4, apiLongitude: -3.7, hours: [] };
+const forecastData = buildForecastData({}, 0);
+const freshForecastData = buildForecastData({ apiLatitude: 99 }, 0);
+const seaData = buildMarineData({ apiLatitude: 41.37, apiLongitude: 2.2 }, 0);
+const inlandData = buildMarineData({ hasSea: false, apiLatitude: 40.4, apiLongitude: -3.7 }, 0);
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
