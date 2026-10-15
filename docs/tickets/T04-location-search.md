@@ -18,8 +18,9 @@ Touches only `src/search/` and `test/fixtures/search/`. No import from `weather`
 
 ## Scope
 
-- `GeocodingClient` on `OpenMeteoService.geocoding` from T01: parameters `name`, `count`, `language`, optional
-  `countryCode`; zod schema; a response without `results` is an empty list.
+- `OpenMeteoService.geocoding` (T01) validates the response with zod and returns camelCased places with nulls for
+  missing fields; a response without `results` is an empty list. `GeocodingClient` only builds the request
+  (`name`, `count`, `language`, optional `countryCode`) and returns the places.
 - `PlaceRepository`: upsert `Place` by GeoNames id; find a `PlaceSearch` by its key; store a search with its
   ordered hits; replace the hits of an existing search in one transaction.
 - `SearchService`:
@@ -30,7 +31,12 @@ Touches only `src/search/` and `test/fixtures/search/`. No import from `weather`
   - if the geocoder fails and nothing is stored, a GraphQL error with `extensions.code = SERVICE_UNAVAILABLE`.
 - Resolver replacing the T01 stub, with an args class validated by class-validator: `name` trimmed and 1 to
   100 characters, `count` 1 to 100, `countryCode` 2 letters (upper-cased), `language` 2 letters.
-- `Place.id` is the GeoNames id as a string.
+- `Place.id` is the GeoNames id as a number everywhere; GraphQL serialises it as `ID`. `Place.elevation` has the
+  same name in the geocoder, the domain, the database and the contract.
+- The upsert of the places of a search is one TypedSQL statement (`prisma/sql/upsertPlaces.sql`).
+- `mappers/` holds `SearchKeyMapper` (the cache key) and `PlaceSearchMapper` (database row to stored search)
+  . Validation decorators (`@Trim`, `@IsCountryCode`, `@IsLanguageCode`, `@NullToUndefined`)
+  come from `shared/validation`.
 
 ## Tests first
 
@@ -38,7 +44,7 @@ Unit:
 
 - Geocoder mapping of a full result and of a result with only the required fields.
 - A response without `results` gives an empty list.
-- Malformed results are rejected by zod.
+- Malformed results are rejected by zod (tested in the `OpenMeteoService` spec).
 - Cache key normalisation: `"  Zakopane "` and `"zakopane"` are the same key; a different language, country
   or count is a different key.
 

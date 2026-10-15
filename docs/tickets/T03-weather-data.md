@@ -26,10 +26,12 @@ Touches only `src/weather/` and `test/fixtures/weather/`. No import from `search
   `timeformat=unixtime`.
 - Marine request: the 5 hourly variables, `forecast_days=8`, the same time zone, `timeformat=unixtime`,
   `cell_selection=sea`.
-- zod schemas for both responses; mappers to domain rows with UTC instants and nulls preserved.
+- The zod schemas of both responses live in `shared/open-meteo/schemas` and are applied by `OpenMeteoService`.
+  `mappers/` turns a validated response into domain rows with UTC instants and nulls preserved, and a database row
+  into a stored snapshot.
 - Marine with every `wave_height` null maps to `hasSea = false` and no hours.
 - `FORECAST_PARSER_VERSION` and `MARINE_PARSER_VERSION`, starting at 1, with a comment on when to bump them.
-- A response that fails zod validation is an unavailable failure.
+- A response that fails zod validation is an unavailable failure (raised by `OpenMeteoService`).
 
 ### 2. Persistence
 

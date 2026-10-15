@@ -32,7 +32,7 @@ and `scoring`.
 ### 2. Orchestration (plan section 3.5)
 
 - `weather.resolveLocation` with the rounded coordinates and the zone.
-- The union of the requested scorers' `requiredSources` decides what is loaded; forecast and marine load in
+- The union of the requested activities' required sources (`ScoringService.requiredSources`) decides what is loaded; forecast and marine load in
   parallel, once per request, with `coverThrough = toDate`.
 - Daily features are derived once from the loaded data and shared by all activities.
 - Per activity, combine its source results (P7): any unavailable gives `ActivityDataUnavailable`; else any

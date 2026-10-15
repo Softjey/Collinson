@@ -81,9 +81,18 @@ Formulas, tables, data and the full design are in [docs/technical-spec.md](docs/
 - **Schema-first GraphQL.** The contract is kept in its own folder as the fixed contract for communication; the
   file in `docs/` is a draft.
 - **e2e tests get PostgreSQL from Testcontainers.**
+- **Modules are isolated.** A module exports only its service, and only when another module needs it. Validation of
+  an Open-Meteo response is the job of the open-meteo module, not of the modules that use it.
+- **Inside a module** the root holds the module, service, resolver and clients. Types go to `entities/`, pure
+  translation between layers to `mappers/`, database access to `repositories/`, other helpers to `utils/`, and
+  tests to a `specs/` folder next to the code.
+- **Names and types are aligned across layers** (for example `Place.id` is a number and `elevation` is called the
+  same everywhere) so there is as little mapping as possible. What remains is explicit functions in `mappers/`.
+- **Raw SQL uses Prisma TypedSQL.** Custom validation decorators are shared.
 - **The GraphQL contract is written by hand**, not generated from the models, and exposes no internals.
   Nullable fields are avoided so invalid combinations cannot be expressed.
-- **Activities share one interface**, so adding an activity does not touch the others.
+- **Activities share one interface and are data**: each activity is a record in a table and one function computes
+  the score from it, so adding an activity is adding a record.
 - **Health reports only our own service.** Observability with OpenTelemetry and grafana/otel-lgtm behind a
   flag. Dockerfiles and one docker compose.
 - **Tests:** unit tests for everything, e2e with the NestJS tools and a mocked Open-Meteo.

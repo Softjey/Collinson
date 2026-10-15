@@ -9,7 +9,8 @@
 ## Goal
 
 The whole scoring model as pure, fully unit-tested code: daily features from hourly data, the activity
-interface, the four scorers and the categories. No database, no HTTP, no import from `weather`.
+formulas as data, the one function that scores a day from them, the four activities and the categories. No
+database, no HTTP, no import from `weather`. Each activity is a record in a table, so adding one is adding a record.
 
 References: [technical spec](../technical-spec.md) sections 8 and 9;
 [implementation plan](../implementation-plan.md) sections 3.3 and 2 (P8, P9).
@@ -25,10 +26,14 @@ Touches only `src/scoring/` and `test/fixtures/scoring/`.
 - `category.ts`: round the score to 2 decimals, then map to index 1 to 8 and the category name (spec 8.6).
 - `daily-features.ts`: group hours into local calendar days by IANA time zone and compute the aggregates of
   spec 8.1. Nulls are skipped; a feature is null only when every hourly value of the day is null.
-- `activity-scorer.ts`: `ActivityScorer`, `DayContext`, `DayOutcome` as in plan section 3.3.
-- `scorer.registry.ts`: scorers collected through a multi-provider token; lookup by activity; the union of
-  required sources for a set of activities.
-- `scoring.params.ts`: every weight, threshold, table and anchor of spec section 8 in one place.
+- `entities/definition.types.ts`: the types of a formula record, `DayContext` and `DayOutcome` as in plan section 3.3.
+- `entities/activity-definitions.ts`: the four activity records with every weight, threshold, table and anchor of
+  spec section 8 in one place.
+- `utils/score-day.ts`: `scoreDay(definition, day)`, the only function that computes a score. Curve kinds,
+  derived features and combiners are registries in `utils/`.
+- `utils/definition-lookup.ts`: lookup by activity and the union of required sources for a set of activities.
+- `mappers/feature-values.mapper.ts`: `FeatureValuesMapper` flattens a `DayContext` into the feature record the formulas read.
+- `scoring.service.ts`: the only thing the module exports, with `score` and `requiredSources`.
 
 ### 2. Outdoor sightseeing (spec 8.4)
 
@@ -100,7 +105,7 @@ Surfing:
 ## Done when
 
 - `src/scoring` imports nothing outside itself and has no I/O.
-- All four scorers are registered and every test above passes.
+- All four activities are records in the table and every test above passes.
 
 ## Out of scope
 
