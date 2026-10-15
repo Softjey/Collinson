@@ -97,7 +97,7 @@ model Place {
   admin1      String?
   latitude    Float
   longitude   Float
-  elevationM  Float?           @db.Real
+  elevation   Float?           @db.Real
   timezone    String?
   population  Int?
   createdAt   DateTime         @default(now()) @db.Timestamptz(3)

@@ -2,6 +2,7 @@ import { plainToInstance } from 'class-transformer';
 import { IsNotEmpty, IsOptional, validateSync } from 'class-validator';
 import { IsCountryCode } from '../country-code.decorator.js';
 import { IsLanguageCode } from '../language-code.decorator.js';
+import { NullToUndefined } from '../null-to-undefined.decorator.js';
 import { Trim } from '../trim.decorator.js';
 
 class Sample {
@@ -9,9 +10,10 @@ class Sample {
   @IsNotEmpty()
   name!: string;
 
+  @NullToUndefined()
   @IsOptional()
   @IsCountryCode()
-  country?: string | null;
+  country?: string;
 
   @IsLanguageCode()
   language!: string;
@@ -25,6 +27,11 @@ describe('Trim', () => {
   it('leaves non-strings for the validators', () => expect(build({ name: 5 }).name).toBe(5));
   it('lets a blank string fail IsNotEmpty after trimming', () =>
     expect(errorsOf({ name: '   ' })).toEqual(['name']));
+});
+
+describe('NullToUndefined', () => {
+  it('turns null into undefined', () => expect(build({ country: null }).country).toBeUndefined());
+  it('keeps other values', () => expect(build({ country: 'pl' }).country).toBe('PL'));
 });
 
 describe('IsCountryCode', () => {
