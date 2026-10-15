@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Prisma, PrismaClient } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../shared/database/prisma.service.js';
-import { FORECAST_PARSER_VERSION } from '../entities/parser-versions.js';
+import { PARSER_VERSIONS } from '../utils/parser-versions.js';
 import type { ForecastData } from '../entities/weather.types.js';
 
 export type ForecastSnapshotRow = Prisma.ForecastSnapshotGetPayload<{ include: { hours: true } }>;
@@ -17,7 +17,7 @@ export class ForecastRepository {
         data: {
           locationId,
           fetchedAt,
-          parserVersion: FORECAST_PARSER_VERSION,
+          parserVersion: PARSER_VERSIONS.forecast,
           apiLatitude: snapshot.apiLatitude,
           apiLongitude: snapshot.apiLongitude,
           elevationM: snapshot.elevationM,

@@ -2,19 +2,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Clock } from '../shared/clock.js';
 import { APP_CONFIG } from '../shared/config/config.module.js';
 import type { AppConfig } from '../shared/config/env.schema.js';
+import { toE2 } from '../shared/coordinates.js';
 import {
   OpenMeteoBadRequestError,
   OpenMeteoRateLimitedError,
   OpenMeteoUnavailableError,
 } from '../shared/open-meteo/open-meteo.errors.js';
-import { ForecastClient } from './forecast.client.js';
-import { ForecastMapper } from './mappers/forecast.mapper.js';
-import { MarineMapper } from './mappers/marine.mapper.js';
-import { ForecastRepository, type ForecastSnapshotRow } from './repositories/forecast.repository.js';
-import { decideAfterFailure, isReusable } from './utils/freshness.policy.js';
-import { LocationRepository } from './repositories/location.repository.js';
-import { MarineClient } from './marine.client.js';
-import { MarineRepository, type MarineSnapshotRow } from './repositories/marine.repository.js';
 import type { ForecastResponse } from '../shared/open-meteo/schemas/forecast.schema.js';
 import type { MarineResponse } from '../shared/open-meteo/schemas/marine.schema.js';
 import { SingleFlight } from '../shared/single-flight.js';
@@ -27,19 +20,30 @@ import type {
   SourceResult,
   StoredSnapshot,
 } from './entities/weather.types.js';
+import { ForecastClient } from './forecast.client.js';
+import { ForecastMapper } from './mappers/forecast.mapper.js';
+import { MarineMapper } from './mappers/marine.mapper.js';
+import { MarineClient } from './marine.client.js';
+import { ForecastRepository, type ForecastSnapshotRow } from './repositories/forecast.repository.js';
+import { LocationRepository } from './repositories/location.repository.js';
+import { MarineRepository, type MarineSnapshotRow } from './repositories/marine.repository.js';
+import { decideAfterFailure, isReusable } from './utils/freshness.policy.js';
 
-interface SnapshotStore<T, Row> {
-  findLatest(locationId: number): Promise<Row | null>;
-  insert(locationId: number, data: T, fetchedAt: Date): Promise<{ id: number }>;
+interface SnapshotRepository<WeatherData, SnapshotRow> {
+  findLatest(locationId: number): Promise<SnapshotRow | null>;
+  insert(locationId: number, data: WeatherData, fetchedAt: Date): Promise<{ id: number }>;
 }
 
-interface Source<T, Response, Row> {
+interface WeatherSource<WeatherData, ApiResponse, SnapshotRow> {
   name: 'forecast' | 'marine';
-  refreshHours: number;
-  repository: SnapshotStore<T, Row>;
-  client: { fetch(location: LocationRef): Promise<Response> };
-  mapper: { toData(response: Response): T; toStored(row: Row): StoredSnapshot<T> };
-  requiresCoverage(data: T): boolean;
+  refreshIntervalHours: number;
+  snapshotRepository: SnapshotRepository<WeatherData, SnapshotRow>;
+  client: { fetch(location: LocationRef): Promise<ApiResponse> };
+  mapper: {
+    toData(apiResponse: ApiResponse): WeatherData;
+    toStored(snapshotRow: SnapshotRow): StoredSnapshot<WeatherData>;
+  };
+  mustCoverRequestedDates(data: WeatherData): boolean;
 }
 
 type WeatherSettings = Pick<AppConfig, 'weatherRefreshHours' | 'wavesRefreshHours' | 'maxStaleHours'>;
@@ -47,8 +51,8 @@ type WeatherSettings = Pick<AppConfig, 'weatherRefreshHours' | 'wavesRefreshHour
 @Injectable()
 export class WeatherService {
   private readonly singleFlight = new SingleFlight();
-  private readonly forecastSource: Source<ForecastData, ForecastResponse, ForecastSnapshotRow>;
-  private readonly marineSource: Source<MarineData, MarineResponse, MarineSnapshotRow>;
+  private readonly forecastSource: WeatherSource<ForecastData, ForecastResponse, ForecastSnapshotRow>;
+  private readonly marineSource: WeatherSource<MarineData, MarineResponse, MarineSnapshotRow>;
 
   constructor(
     private readonly clock: Clock,
@@ -63,91 +67,120 @@ export class WeatherService {
   ) {
     this.forecastSource = {
       name: 'forecast',
-      refreshHours: weatherSettings.weatherRefreshHours,
-      repository: forecastRepository,
+      refreshIntervalHours: weatherSettings.weatherRefreshHours,
+      snapshotRepository: forecastRepository,
       client: forecastClient,
       mapper: forecastMapper,
-      requiresCoverage: () => true,
+      mustCoverRequestedDates: () => true,
     };
     this.marineSource = {
       name: 'marine',
-      refreshHours: weatherSettings.wavesRefreshHours,
-      repository: marineRepository,
+      refreshIntervalHours: weatherSettings.wavesRefreshHours,
+      snapshotRepository: marineRepository,
       client: marineClient,
       mapper: marineMapper,
-      requiresCoverage: (data) => data.hasSea,
+      mustCoverRequestedDates: (marineData) => marineData.hasSea,
     };
   }
 
   resolveLocation(latitude: number, longitude: number, timezone: string): Promise<LocationRef> {
     return this.locationRepository.findOrCreate({
-      latE2: Math.round(latitude * 100),
-      lonE2: Math.round(longitude * 100),
+      latE2: toE2(latitude),
+      lonE2: toE2(longitude),
       timezone,
     });
   }
 
   getForecast(location: LocationRef, coverThrough: LocalDate): Promise<SourceResult<ForecastData>> {
-    return this.get(this.forecastSource, location, coverThrough);
+    return this.getSourceResult(this.forecastSource, location, coverThrough);
   }
 
   getMarine(location: LocationRef, coverThrough: LocalDate): Promise<SourceResult<MarineData>> {
-    return this.get(this.marineSource, location, coverThrough);
+    return this.getSourceResult(this.marineSource, location, coverThrough);
   }
 
-  private async get<T, Response, Row>(
-    source: Source<T, Response, Row>,
+  private async getSourceResult<WeatherData, ApiResponse, SnapshotRow>(
+    source: WeatherSource<WeatherData, ApiResponse, SnapshotRow>,
     location: LocationRef,
     coverThrough: LocalDate,
-  ): Promise<SourceResult<T>> {
-    const { clock, weatherSettings } = this;
-    const row = await source.repository.findLatest(location.id);
-    const snapshot = row && source.mapper.toStored(row);
+  ): Promise<SourceResult<WeatherData>> {
+    const latestSnapshot = await this.findLatestSnapshot(source, location);
 
-    if (
-      snapshot &&
-      isReusable({
-        fetchedAt: snapshot.fetchedAt,
-        now: clock.now(),
-        refreshHours: source.refreshHours,
-        timezone: location.timezone,
-        coverThrough,
-        requiresCoverage: source.requiresCoverage(snapshot.data),
-      })
-    ) {
-      return { status: 'ok', data: snapshot.data, fetchedAt: snapshot.fetchedAt, stale: false };
+    if (latestSnapshot && this.canReuseSnapshot(source, latestSnapshot, location, coverThrough)) {
+      return { status: 'ok', data: latestSnapshot.data, fetchedAt: latestSnapshot.fetchedAt, stale: false };
     }
 
     try {
-      const stored = await this.singleFlight.run(`${source.name}:${location.id}`, async () => {
-        const data = source.mapper.toData(await source.client.fetch(location));
-        const fetchedAt = clock.now();
-        await source.repository.insert(location.id, data, fetchedAt);
-        return { data, fetchedAt };
-      });
-      return { status: 'ok', data: stored.data, fetchedAt: stored.fetchedAt, stale: false };
+      const freshSnapshot = await this.fetchAndStoreSnapshot(source, location);
+      return { status: 'ok', data: freshSnapshot.data, fetchedAt: freshSnapshot.fetchedAt, stale: false };
     } catch (error) {
-      const cause = failureCause(error);
-      if (cause === null) {
-        throw error;
-      }
-      const decision = decideAfterFailure({
-        fetchedAt: snapshot?.fetchedAt ?? null,
-        now: clock.now(),
-        maxStaleHours: weatherSettings.maxStaleHours,
-      });
-      if (snapshot && decision === 'stale') {
-        return { status: 'ok', data: snapshot.data, fetchedAt: snapshot.fetchedAt, stale: true };
-      }
-      if (snapshot && decision === 'too_old') {
-        return { status: 'too_old', fetchedAt: snapshot.fetchedAt };
-      }
-      return { status: 'unavailable', cause };
+      return this.resultAfterFailedFetch(error, latestSnapshot);
     }
+  }
+
+  private async findLatestSnapshot<WeatherData, ApiResponse, SnapshotRow>(
+    source: WeatherSource<WeatherData, ApiResponse, SnapshotRow>,
+    location: LocationRef,
+  ): Promise<StoredSnapshot<WeatherData> | null> {
+    const snapshotRow = await source.snapshotRepository.findLatest(location.id);
+    return snapshotRow && source.mapper.toStored(snapshotRow);
+  }
+
+  private canReuseSnapshot<WeatherData, ApiResponse, SnapshotRow>(
+    source: WeatherSource<WeatherData, ApiResponse, SnapshotRow>,
+    snapshot: StoredSnapshot<WeatherData>,
+    location: LocationRef,
+    coverThrough: LocalDate,
+  ): boolean {
+    return isReusable({
+      fetchedAt: snapshot.fetchedAt,
+      now: this.clock.now(),
+      refreshHours: source.refreshIntervalHours,
+      timezone: location.timezone,
+      coverThrough,
+      requiresCoverage: source.mustCoverRequestedDates(snapshot.data),
+    });
+  }
+
+  private fetchAndStoreSnapshot<WeatherData, ApiResponse, SnapshotRow>(
+    source: WeatherSource<WeatherData, ApiResponse, SnapshotRow>,
+    location: LocationRef,
+  ): Promise<{ data: WeatherData; fetchedAt: Date }> {
+    return this.singleFlight.run(`${source.name}:${location.id}`, async () => {
+      const apiResponse = await source.client.fetch(location);
+      const data = source.mapper.toData(apiResponse);
+      const fetchedAt = this.clock.now();
+      await source.snapshotRepository.insert(location.id, data, fetchedAt);
+      return { data, fetchedAt };
+    });
+  }
+
+  private resultAfterFailedFetch<WeatherData>(
+    error: unknown,
+    latestSnapshot: StoredSnapshot<WeatherData> | null,
+  ): SourceResult<WeatherData> {
+    const failureCause = toFailureCause(error);
+    if (failureCause === null) {
+      throw error;
+    }
+
+    const decision = decideAfterFailure({
+      fetchedAt: latestSnapshot?.fetchedAt ?? null,
+      now: this.clock.now(),
+      maxStaleHours: this.weatherSettings.maxStaleHours,
+    });
+
+    if (latestSnapshot && decision === 'stale') {
+      return { status: 'ok', data: latestSnapshot.data, fetchedAt: latestSnapshot.fetchedAt, stale: true };
+    }
+    if (latestSnapshot && decision === 'too_old') {
+      return { status: 'too_old', fetchedAt: latestSnapshot.fetchedAt };
+    }
+    return { status: 'unavailable', cause: failureCause };
   }
 }
 
-function failureCause(error: unknown): SourceFailureCause | null {
+function toFailureCause(error: unknown): SourceFailureCause | null {
   if (error instanceof OpenMeteoRateLimitedError) {
     return 'RATE_LIMITED';
   }

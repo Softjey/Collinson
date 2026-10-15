@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { MarineResponse } from '../../../shared/open-meteo/schemas/marine.schema.js';
-import { MARINE_PARSER_VERSION } from '../../entities/parser-versions.js';
+import { PARSER_VERSIONS } from '../../utils/parser-versions.js';
 import { MarineMapper } from '../marine.mapper.js';
 import type { MarineSnapshotRow } from '../../repositories/marine.repository.js';
 
@@ -14,7 +14,7 @@ const mapper = new MarineMapper();
 
 describe('MarineMapper.toData', () => {
   it('starts the parser version at 1', () => {
-    expect(MARINE_PARSER_VERSION).toBe(1);
+    expect(PARSER_VERSIONS.marine).toBe(1);
   });
 
   it('maps a coastal response to hasSea with 192 hours', () => {

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { MarineResponse } from '../../shared/open-meteo/schemas/marine.schema.js';
 import type { MarineData, StoredSnapshot } from '../entities/weather.types.js';
 import type { MarineSnapshotRow } from '../repositories/marine.repository.js';
-import { unixToDate } from './convert.js';
+import { unixToDate } from '../../shared/unix-time.js';
 
 @Injectable()
 export class MarineMapper {

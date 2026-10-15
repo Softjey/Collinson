@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Prisma, PrismaClient } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../shared/database/prisma.service.js';
-import { MARINE_PARSER_VERSION } from '../entities/parser-versions.js';
+import { PARSER_VERSIONS } from '../utils/parser-versions.js';
 import type { MarineData } from '../entities/weather.types.js';
 
 export type MarineSnapshotRow = Prisma.MarineSnapshotGetPayload<{ include: { hours: true } }>;
@@ -15,7 +15,7 @@ export class MarineRepository {
       data: {
         locationId,
         fetchedAt,
-        parserVersion: MARINE_PARSER_VERSION,
+        parserVersion: PARSER_VERSIONS.marine,
         hasSea: data.hasSea,
         apiLatitude: data.apiLatitude,
         apiLongitude: data.apiLongitude,

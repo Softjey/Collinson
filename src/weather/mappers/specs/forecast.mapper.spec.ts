@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { ForecastResponse } from '../../../shared/open-meteo/schemas/forecast.schema.js';
-import { FORECAST_PARSER_VERSION } from '../../entities/parser-versions.js';
+import { PARSER_VERSIONS } from '../../utils/parser-versions.js';
 import { ForecastMapper } from '../forecast.mapper.js';
 import type { ForecastSnapshotRow } from '../../repositories/forecast.repository.js';
 
@@ -16,7 +16,7 @@ const mapper = new ForecastMapper();
 
 describe('ForecastMapper.toData', () => {
   it('starts the parser version at 1', () => {
-    expect(FORECAST_PARSER_VERSION).toBe(1);
+    expect(PARSER_VERSIONS.forecast).toBe(1);
   });
 
   it('maps 192 hours to rows with UTC instants', () => {

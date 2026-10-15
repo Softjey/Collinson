@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { ForecastResponse } from '../../shared/open-meteo/schemas/forecast.schema.js';
 import type { ForecastData, StoredSnapshot } from '../entities/weather.types.js';
 import type { ForecastSnapshotRow } from '../repositories/forecast.repository.js';
-import { unixToDate } from './convert.js';
+import { unixToDate } from '../../shared/unix-time.js';
 
 @Injectable()
 export class ForecastMapper {

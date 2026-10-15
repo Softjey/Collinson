@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { ForecastResponse } from '../shared/open-meteo/schemas/forecast.schema.js';
 import { OpenMeteoService } from '../shared/open-meteo/open-meteo.service.js';
-import { fromE2 } from './mappers/convert.js';
+import { fromE2 } from '../shared/coordinates.js';
 import type { LocationRef } from './entities/weather.types.js';
 
 const HOURLY_VARIABLES = [
