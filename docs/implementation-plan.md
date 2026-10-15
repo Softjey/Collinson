@@ -112,9 +112,10 @@ src/
                    specs/         unit tests; every subfolder has its own specs/ next to the code it covers
   search/          place-search.module.ts, place-search.resolver.ts, place-search.service.ts, geocoding.client.ts
   weather/         weather.module.ts, weather.service.ts, forecast.client.ts, marine.client.ts
-  scoring/         scoring.module.ts, scoring.service.ts; entities/ holds the classes of the model (curves,
-                   conditions, combiners, scorers, the declared activities, the score scale), mappers/ holds
-                   the hourly-to-daily and day-to-feature-record translations, utils/ holds the maths
+  scoring/         scoring.module.ts, scoring.service.ts; entities/ holds only types (activity names, day
+                   features, rated score), formulas/ the building blocks (curves, conditions, combiners, derived
+                   features), activities/ the scorers, the catalogue and the four declared activities, mappers/
+                   the hourly-to-daily and day-to-feature-record translations, utils/ the maths and score scale
   activity-scores/ activity-scores.module.ts, activity-scores.resolver.ts, activity-scores.service.ts,
                    date-range.validator.ts, time-zone.service.ts, mappers/
   health/          health.controller.ts
@@ -168,13 +169,13 @@ The model is a small set of classes:
 - `Curve`, `Condition`, `Combiner` and `DerivedFeature` are abstract classes with a static factory per kind
   (`Curve.piecewiseLinear`, `Condition.atLeast`, `Combiner.weightedSum`, `DerivedFeature.humidex`), so a declaration
   reads as a list of what the activity depends on.
-- `entities/activities.ts` declares the four activities. `ActivityCatalogue` looks a scorer up by activity and
+- `activities/activities.ts` declares the four activities. `ActivityCatalogue` looks a scorer up by activity and
   collects the sources of a set of activities. `ScoreScale` rounds a score and names its category.
 
 Features have descriptive names with units (`maxTemperatureC`, `meanWindSpeedKmh`, `totalPrecipitationMm`).
 
 Adding an activity: add its name to `ACTIVITIES` and to the contract enum, declare a `FormulaScorer` in
-`entities/activities.ts` and add it to `ALL_ACTIVITY_SCORERS`. A new kind of curve, condition, combiner or derived
+`activities/activities.ts` and add it to `ALL_ACTIVITY_SCORERS`. A new kind of curve, condition, combiner or derived
 feature is one more subclass with a static factory.
 
 Weather:

@@ -23,14 +23,15 @@ Touches only `src/scoring/` and `test/fixtures/scoring/`.
 
 - `utils/math.ts`: `clamp`, piecewise-linear interpolation through anchors (flat outside them), step-table lookup by
   lower bound (so the gaps between printed bands, such as 6.99 to 7, cannot fall through).
-- `entities/day-features.ts`: the plain types of the module: `DayConditions`, `DayOutcome`, the daily features and the
+- `entities/`: only types. `day-features.ts` holds the plain types of the module: `DayConditions`, `DayOutcome`, the daily features and the
   hourly inputs, with descriptive names and units.
-- `entities/curves.ts`, `entities/formula-parts.ts`: `Curve` (piecewise linear, step table, polynomial, peak
+- `formulas/curves.ts`, `formulas/formula-parts.ts`: `Curve` (piecewise linear, step table, polynomial, peak
   normalised extreme value), `Condition`, `Combiner` and `DerivedFeature`, each with static factories.
-- `entities/activity-scorers.ts`: `ActivityScorer`, `FormulaScorer`, `OppositeScorer` and `ActivityCatalogue`.
-- `entities/activities.ts`: the four activities declared with every weight, threshold, table and anchor of spec
+- `activities/activity-scorers.ts`: `ActivityScorer`, `FormulaScorer` and `OppositeScorer`; `activities/activity-catalogue.ts`:
+  `ActivityCatalogue`.
+- `activities/activities.ts`: the four activities declared with every weight, threshold, table and anchor of spec
   section 8 in one place.
-- `entities/score-scale.ts`: `ScoreScale` rounds the score to 2 decimals, then maps it to category index 1 to 8 and
+- `utils/score-scale.ts`: `ScoreScale` rounds the score to 2 decimals, then maps it to category index 1 to 8 and
   the category name (spec 8.6).
 - `mappers/daily-features.mapper.ts`: groups hours into local calendar days by IANA time zone and computes the
   aggregates of spec 8.1. Nulls are skipped; a feature is null only when every hourly value of the day is null.
