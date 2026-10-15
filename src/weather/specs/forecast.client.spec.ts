@@ -6,7 +6,7 @@ import {
   OpenMeteoUnavailableError,
 } from '../../shared/open-meteo/open-meteo.errors.js';
 import type { OpenMeteoService } from '../../shared/open-meteo/open-meteo.service.js';
-import { ForecastClient, FORECAST_PARSER_VERSION } from '../forecast.client.js';
+import { ForecastClient } from '../forecast.client.js';
 
 function fixture(): Record<string, unknown> & { hourly: Record<string, unknown[]> } {
   const path = fileURLToPath(
@@ -29,10 +29,6 @@ function clientReturning(response: unknown) {
 const location = { latE2: 4140, lonE2: 218, timezone: 'Europe/Madrid' };
 
 describe('ForecastClient', () => {
-  it('starts the parser version at 1', () => {
-    expect(FORECAST_PARSER_VERSION).toBe(1);
-  });
-
   it('requests the 10 hourly variables for 8 days with unix time', async () => {
     const { client, calls } = clientReturning(fixture());
 
@@ -50,48 +46,6 @@ describe('ForecastClient', () => {
           'wind_speed_10m,wind_gusts_10m,weather_code',
       },
     ]);
-  });
-
-  it('maps 192 hours to rows with UTC instants', async () => {
-    const { client } = clientReturning(fixture());
-
-    const data = await client.fetch(location);
-
-    expect(data.hours).toHaveLength(192);
-    expect(data.hours[0]?.timeUtc).toEqual(new Date('2026-10-12T22:00:00Z'));
-    expect(data.hours[191]?.timeUtc).toEqual(new Date('2026-10-20T21:00:00Z'));
-    expect(data.hours[1]).toMatchObject({ relativeHumidity2m: 63, weatherCode: 1 });
-  });
-
-  it('maps the grid point, elevation and offset', async () => {
-    const { client } = clientReturning(fixture());
-
-    const data = await client.fetch(location);
-
-    expect(data).toMatchObject({
-      apiLatitude: 41.4,
-      apiLongitude: 2.18,
-      elevationM: 12,
-      utcOffsetSeconds: 7200,
-    });
-  });
-
-  it('keeps nulls as null', async () => {
-    const { client } = clientReturning(fixture());
-
-    const data = await client.fetch(location);
-
-    expect(data.hours[5]?.temperature2m).toBeNull();
-    expect(data.hours[191]?.snowDepth).toBeNull();
-    expect(data.hours[4]?.temperature2m).not.toBeNull();
-  });
-
-  it('maps a missing elevation to null', async () => {
-    const response = fixture();
-    delete response.elevation;
-    const { client } = clientReturning(response);
-
-    await expect(client.fetch(location)).resolves.toMatchObject({ elevationM: null });
   });
 
   describe('HTTP client errors', () => {

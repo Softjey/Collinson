@@ -6,7 +6,7 @@ import {
   OpenMeteoUnavailableError,
 } from '../../shared/open-meteo/open-meteo.errors.js';
 import type { OpenMeteoService } from '../../shared/open-meteo/open-meteo.service.js';
-import { MarineClient, MARINE_PARSER_VERSION } from '../marine.client.js';
+import { MarineClient } from '../marine.client.js';
 
 function fixture(name: string): Record<string, unknown> & { hourly: Record<string, unknown[]> } {
   const path = fileURLToPath(new URL(`../../../test/fixtures/weather/${name}.json`, import.meta.url));
@@ -27,10 +27,6 @@ function clientReturning(response: unknown) {
 const location = { latE2: 4138, lonE2: 221, timezone: 'Europe/Madrid' };
 
 describe('MarineClient', () => {
-  it('starts the parser version at 1', () => {
-    expect(MARINE_PARSER_VERSION).toBe(1);
-  });
-
   it('requests the 5 hourly variables for 8 days, nearest sea cell, unix time', async () => {
     const { client, calls } = clientReturning(fixture('marine-barcelona'));
 
@@ -47,50 +43,6 @@ describe('MarineClient', () => {
         hourly: 'wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period',
       },
     ]);
-  });
-
-  it('maps a coastal response to hasSea with 192 hours', async () => {
-    const { client } = clientReturning(fixture('marine-barcelona'));
-
-    const data = await client.fetch(location);
-
-    expect(data.hasSea).toBe(true);
-    expect(data.apiLatitude).toBe(41.375);
-    expect(data.apiLongitude).toBe(2.208);
-    expect(data.hours).toHaveLength(192);
-    expect(data.hours[0]?.timeUtc).toEqual(new Date('2026-10-12T22:00:00Z'));
-    expect(data.hours[0]).toMatchObject({ waveHeight: 0.6, waveDirection: 120 });
-  });
-
-  it('keeps nulls in individual hours', async () => {
-    const { client } = clientReturning(fixture('marine-barcelona'));
-
-    const data = await client.fetch(location);
-
-    expect(data.hours[10]?.wavePeriod).toBeNull();
-    expect(data.hours[10]?.waveHeight).not.toBeNull();
-  });
-
-  it('maps an all-null wave height to no sea and no hours', async () => {
-    const { client } = clientReturning(fixture('marine-madrid-inland'));
-
-    const data = await client.fetch(location);
-
-    expect(data.hasSea).toBe(false);
-    expect(data.hours).toEqual([]);
-  });
-
-  it('keeps hasSea when only some wave heights are null', async () => {
-    const response = fixture('marine-barcelona');
-    response.hourly.wave_height = (response.hourly.wave_height ?? []).map((value, i) =>
-      i === 0 ? value : null,
-    );
-    const { client } = clientReturning(response);
-
-    const data = await client.fetch(location);
-
-    expect(data.hasSea).toBe(true);
-    expect(data.hours).toHaveLength(192);
   });
 
   describe('HTTP client errors', () => {

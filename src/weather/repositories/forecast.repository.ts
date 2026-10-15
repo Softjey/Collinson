@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { PrismaClient } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../shared/database/prisma.service.js';
-import { FORECAST_PARSER_VERSION } from '../forecast.client.js';
+import { FORECAST_PARSER_VERSION, toStoredForecast } from '../mappers/forecast.mapper.js';
 import type { ForecastData, StoredSnapshot } from '../entities/weather.types.js';
 
 @Injectable()
@@ -50,16 +50,6 @@ export class ForecastRepository {
     if (!row) {
       return null;
     }
-    return {
-      id: row.id,
-      fetchedAt: row.fetchedAt,
-      data: {
-        apiLatitude: row.apiLatitude,
-        apiLongitude: row.apiLongitude,
-        elevationM: row.elevationM,
-        utcOffsetSeconds: row.utcOffsetSeconds,
-        hours: row.hours.map(({ snapshotId: _snapshotId, ...hour }) => hour),
-      },
-    };
+    return toStoredForecast(row);
   }
 }
