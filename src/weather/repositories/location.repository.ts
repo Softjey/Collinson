@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { PrismaClient } from '../../generated/prisma/client.js';
+import { findOrCreateLocation } from '../../generated/prisma/sql.js';
 import { PrismaService } from '../../shared/database/prisma.service.js';
 import type { LocationRef } from '../entities/weather.types.js';
 
@@ -9,15 +10,11 @@ export class LocationRepository {
 
   async findOrCreate(input: Omit<LocationRef, 'id'>): Promise<LocationRef> {
     const { latE2, lonE2, timezone } = input;
-    const [row] = await this.prisma.$queryRaw<{ id: number; timezone: string }[]>`
-      INSERT INTO "Location" ("latE2", "lonE2", "timezone", "updatedAt")
-      VALUES (${latE2}, ${lonE2}, ${timezone}, now())
-      ON CONFLICT ("latE2", "lonE2") DO UPDATE SET "timezone" = COALESCE("Location"."timezone", EXCLUDED."timezone")
-      RETURNING "id", "timezone"`;
+    const [row] = await this.prisma.$queryRawTyped(findOrCreateLocation(latE2, lonE2, timezone));
     if (!row) {
       throw new Error('Location upsert returned no row');
     }
-    return { id: row.id, latE2, lonE2, timezone: row.timezone };
+    return { id: row.id, latE2, lonE2, timezone: row.timezone ?? timezone };
   }
 
   async updateElevation(locationId: number, elevationM: number): Promise<void> {
