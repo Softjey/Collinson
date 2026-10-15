@@ -79,6 +79,7 @@ Formulas, tables, data and the full design are in [docs/technical-spec.md](docs/
   the team; if there were, it would be decided there. For now it is an assumption made for simplicity. The code is
   not designed so that Open-Meteo can be easily replaced. It is designed for the easiest maintenance of all the
   code and for fewer abstractions.
+- **The time zone is determined offline from the coordinates** with `@photostructure/tz-lookup`.
 - **TypeScript, NestJS, GraphQL, class-validator, zod** for upstream responses, **Prisma** with PostgreSQL.
 - **Schema-first GraphQL.** The contract is kept in its own folder as the fixed contract for communication; the
   file in `docs/` is a draft.
