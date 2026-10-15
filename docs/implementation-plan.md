@@ -110,7 +110,7 @@ src/
                    repositories/  Prisma access: take domain types in, return database rows out, no mapping
                    utils/         other pure helpers (freshness policy, scoring maths and curves)
                    specs/         unit tests; every subfolder has its own specs/ next to the code it covers
-  search/          search.module.ts, search.resolver.ts, search.service.ts, geocoding.client.ts
+  search/          place-search.module.ts, place-search.resolver.ts, place-search.service.ts, geocoding.client.ts
   weather/         weather.module.ts, weather.service.ts, forecast.client.ts, marine.client.ts
   scoring/         scoring.module.ts, scoring.service.ts; entities/ holds the activity definitions (the formulas
                    as data), utils/ holds score-day.ts, curves, combiners, derived features, daily features
