@@ -19,3 +19,22 @@ export async function truncateAll(prisma: PrismaClient): Promise<void> {
       `"ForecastHour", "ForecastSnapshot", "Location" RESTART IDENTITY CASCADE`,
   );
 }
+
+/** Registers the Jest hooks of an integration suite: one Prisma client, tables emptied before every test. */
+export function useTestDatabase(): { prisma: PrismaClient } {
+  const database = {} as { prisma: PrismaClient };
+
+  beforeAll(() => {
+    database.prisma = createTestPrisma();
+  });
+
+  beforeEach(async () => {
+    await truncateAll(database.prisma);
+  });
+
+  afterAll(async () => {
+    await database.prisma.$disconnect();
+  });
+
+  return database;
+}
