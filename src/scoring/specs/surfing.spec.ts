@@ -1,8 +1,7 @@
 import { SURFING } from '../entities/activity-definitions.js';
 import type { MarineDayFeatures, WeatherDayFeatures } from '../utils/daily-features.js';
 import type { DayContext } from '../entities/definition.types.js';
-import { scoreDay } from '../utils/score-day.js';
-import { curveOf } from './helpers.js';
+import { curveOf, scoreDay } from './helpers.js';
 
 const weather: WeatherDayFeatures = {
   tMax: 20,

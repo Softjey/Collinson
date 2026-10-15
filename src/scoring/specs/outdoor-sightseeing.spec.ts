@@ -2,8 +2,7 @@ import { loadEventFeatures } from '../../../test/fixtures/scoring/load.js';
 import { OUTDOOR_SIGHTSEEING } from '../entities/activity-definitions.js';
 import { categorize } from '../utils/category.js';
 import type { WeatherDayFeatures } from '../utils/daily-features.js';
-import { scoreDay } from '../utils/score-day.js';
-import { curveOf, NO_WEATHER, scoreOf, withoutCaps, withWeather } from './helpers.js';
+import { curveOf, NO_WEATHER, scoreDay, scoreOf, withoutCaps, withWeather } from './helpers.js';
 
 const pleasantDay: WeatherDayFeatures = {
   tMax: 22,

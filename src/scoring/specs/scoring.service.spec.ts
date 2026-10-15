@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { ACTIVITIES } from '../entities/activity.js';
 import type { DayContext } from '../entities/definition.types.js';
+import { FeatureValuesMapper } from '../mappers/feature-values.mapper.js';
 import { ScoringModule } from '../scoring.module.js';
 import { ScoringService } from '../scoring.service.js';
 
@@ -21,7 +22,7 @@ const day: DayContext = {
 };
 
 describe('ScoringService', () => {
-  const service = new ScoringService();
+  const service = new ScoringService(new FeatureValuesMapper());
 
   it('scores the requested activities in order', () => {
     const results = service.score(['INDOOR_SIGHTSEEING', 'SKIING', 'SURFING'], day);

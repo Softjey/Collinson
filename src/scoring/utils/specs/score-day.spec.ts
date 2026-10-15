@@ -1,5 +1,5 @@
 import type { ActivityDefinition, DayContext, FormulaDefinition } from '../../entities/definition.types.js';
-import { scoreDay } from '../score-day.js';
+import { scoreDay } from '../../specs/helpers.js';
 
 const day = (weather: Record<string, number | null>, marine: DayContext['marine'] = null): DayContext => ({
   weather: weather as never,

@@ -1,13 +1,11 @@
 import { combine } from './combiners.js';
 import { compileCurve } from './curves.js';
 import type {
-  DayContext,
   ActivityDefinition,
   Condition,
   DayOutcome,
   FormulaDefinition,
 } from '../entities/definition.types.js';
-import { toFeatureValues } from '../mappers/feature-values.mapper.js';
 import { computeDerived, type FeatureValues } from './derived-features.js';
 
 const scored = (score: number): DayOutcome => ({ kind: 'scored', score });
@@ -58,13 +56,10 @@ function scoreFormula(definition: FormulaDefinition, base: FeatureValues): DayOu
   return scored(score);
 }
 
-function scoreFeatures(definition: ActivityDefinition, features: FeatureValues): DayOutcome {
+export function scoreFeatures(definition: ActivityDefinition, features: FeatureValues): DayOutcome {
   if (!('basedOn' in definition)) return scoreFormula(definition, features);
 
   const outcome = scoreFeatures(definition.basedOn, features);
   if (outcome.kind === 'unscored') return outcome;
   return scored(definition.base + definition.share * (1 - outcome.score));
 }
-
-export const scoreDay = (definition: ActivityDefinition, day: DayContext): DayOutcome =>
-  scoreFeatures(definition, toFeatureValues(day));

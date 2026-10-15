@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import type { Activity } from './entities/activity.js';
 import { findDefinition, requiredSources } from './utils/definition-lookup.js';
 import type { DataSource, DayContext, DayOutcome } from './entities/definition.types.js';
-import { scoreDay } from './utils/score-day.js';
+import { FeatureValuesMapper } from './mappers/feature-values.mapper.js';
+import { scoreFeatures } from './utils/score-day.js';
 
 export interface ActivityOutcome {
   activity: Activity;
@@ -11,8 +12,14 @@ export interface ActivityOutcome {
 
 @Injectable()
 export class ScoringService {
+  constructor(private readonly mapper: FeatureValuesMapper) {}
+
   score(activities: readonly Activity[], day: DayContext): ActivityOutcome[] {
-    return activities.map((activity) => ({ activity, outcome: scoreDay(findDefinition(activity), day) }));
+    const features = this.mapper.toFeatureValues(day);
+    return activities.map((activity) => ({
+      activity,
+      outcome: scoreFeatures(findDefinition(activity), features),
+    }));
   }
 
   requiredSources(activities: readonly Activity[]): DataSource[] {

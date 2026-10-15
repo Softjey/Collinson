@@ -1,7 +1,8 @@
 import { compileCurve } from '../utils/curves.js';
 import type { ActivityDefinition, DayContext, FormulaDefinition } from '../entities/definition.types.js';
 import type { WeatherDayFeatures } from '../utils/daily-features.js';
-import { scoreDay } from '../utils/score-day.js';
+import { FeatureValuesMapper } from '../mappers/feature-values.mapper.js';
+import { scoreFeatures } from '../utils/score-day.js';
 
 export const NO_WEATHER: DayContext = { weather: null, marine: null };
 
@@ -19,6 +20,11 @@ export const withoutCaps = (definition: FormulaDefinition): FormulaDefinition =>
   ...definition,
   caps: [],
 });
+
+const mapper = new FeatureValuesMapper();
+
+export const scoreDay = (definition: ActivityDefinition, day: DayContext) =>
+  scoreFeatures(definition, mapper.toFeatureValues(day));
 
 export function scoreOf(definition: ActivityDefinition, day: DayContext): number {
   const outcome = scoreDay(definition, day);

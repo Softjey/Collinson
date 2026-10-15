@@ -1,10 +1,12 @@
 import type { DayContext } from '../../entities/definition.types.js';
-import { toFeatureValues } from '../feature-values.mapper.js';
+import { FeatureValuesMapper } from '../feature-values.mapper.js';
 
 const weather = { tMax: 10, rhMean: 50 } as unknown as NonNullable<DayContext['weather']>;
 const features = { waveHeight: 1.2, wavePeriod: 9 };
 
-describe('toFeatureValues', () => {
+const { toFeatureValues } = new FeatureValuesMapper();
+
+describe('FeatureValuesMapper.toFeatureValues', () => {
   it('merges weather and marine features into one flat record', () => {
     expect(toFeatureValues({ weather, marine: { hasSea: true, features } })).toEqual({
       tMax: 10,
