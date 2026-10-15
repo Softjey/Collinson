@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { localDateOf } from '../../shared/local-date.js';
 import type {
   HourlyMarine,
   HourlyWeather,
@@ -83,23 +84,11 @@ export class DailyFeaturesMapper {
     hours: readonly Hour[],
     timeZone: string,
   ): Map<string, Hour[]> {
-    const dateFormat = new Intl.DateTimeFormat('en-CA', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
     const hoursByDate = new Map<string, Hour[]>();
     for (const hour of hours) {
-      const date = this.localDateOf(dateFormat, hour.unixSeconds);
+      const date = localDateOf(new Date(hour.unixSeconds * 1000), timeZone);
       hoursByDate.set(date, [...(hoursByDate.get(date) ?? []), hour]);
     }
     return hoursByDate;
-  }
-
-  private localDateOf(dateFormat: Intl.DateTimeFormat, unixSeconds: number): string {
-    const parts = dateFormat.formatToParts(unixSeconds * 1000);
-    const part = (type: string) => parts.find((candidate) => candidate.type === type)?.value ?? '';
-    return `${part('year')}-${part('month')}-${part('day')}`;
   }
 }

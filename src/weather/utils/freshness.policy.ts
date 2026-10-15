@@ -1,22 +1,8 @@
+import { addDays, localDateOf } from '../../shared/local-date.js';
 import type { LocalDate } from '../entities/weather.types.js';
 
 const HOUR_MS = 3_600_000;
 const FETCHED_DAYS_AHEAD = 7;
-
-export function localDateOf(instant: Date, timezone: string): LocalDate {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(instant);
-}
-
-function addDays(date: LocalDate, days: number): LocalDate {
-  const shifted = new Date(`${date}T00:00:00Z`);
-  shifted.setUTCDate(shifted.getUTCDate() + days);
-  return shifted.toISOString().slice(0, 10);
-}
 
 export interface ReuseInput {
   fetchedAt: Date;

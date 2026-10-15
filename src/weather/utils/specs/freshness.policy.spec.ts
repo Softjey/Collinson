@@ -1,4 +1,5 @@
-import { decideAfterFailure, isReusable, localDateOf } from '../freshness.policy.js';
+import { localDateOf } from '../../../shared/local-date.js';
+import { decideAfterFailure, isReusable } from '../freshness.policy.js';
 
 const HOUR = 3_600_000;
 const now = new Date('2026-10-13T12:00:00Z');
@@ -11,16 +12,6 @@ const base = {
   coverThrough: '2026-10-20',
   requiresCoverage: true,
 };
-
-describe('localDateOf', () => {
-  it('uses the calendar date in the given time zone', () => {
-    const instant = new Date('2026-10-13T22:30:00Z');
-
-    expect(localDateOf(instant, 'UTC')).toBe('2026-10-13');
-    expect(localDateOf(instant, 'Europe/Madrid')).toBe('2026-10-14');
-    expect(localDateOf(instant, 'America/Los_Angeles')).toBe('2026-10-13');
-  });
-});
 
 describe('isReusable', () => {
   it('reuses a snapshot within the interval that covers the date', () => {

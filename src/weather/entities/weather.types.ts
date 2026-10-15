@@ -1,4 +1,4 @@
-export type LocalDate = string;
+export type { LocalDate } from '../../shared/local-date.js';
 
 export interface LocationRef {
   id: number;
