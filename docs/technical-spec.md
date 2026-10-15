@@ -258,20 +258,22 @@ covers the mapping of raw data; scoring parameters can change without data migra
 
 Hours are grouped into calendar days in the location time zone. For one day:
 
-| Feature | Definition |
-|---|---|
-| `tMax` | maximum `temperature_2m` |
-| `rhMean` | mean `relative_humidity_2m` |
-| `precip` | sum of `precipitation` (mm) |
-| `rain` | sum of `rain` (mm) |
-| `snowfallSum` | sum of `snowfall` (cm) |
-| `snowDepthMax` | maximum `snow_depth` (m) |
-| `snowHours` | number of hours with `snowfall > 0` |
-| `cloud` | mean `cloud_cover` (%) |
-| `windMean` | mean `wind_speed_10m` (km/h) |
-| `windMax` | maximum `wind_speed_10m` (km/h) |
-| `waveHeight` | maximum `wave_height` (m) |
-| `wavePeriod` | maximum `wave_period` (s) |
+| Feature | Code name | Definition |
+|---|---|---|
+| `tMax` | `maxTemperatureC` | maximum `temperature_2m` |
+| `rhMean` | `meanRelativeHumidityPercent` | mean `relative_humidity_2m` |
+| `precip` | `totalPrecipitationMm` | sum of `precipitation` (mm) |
+| `rain` | `totalRainMm` | sum of `rain` (mm) |
+| `snowfallSum` | `totalSnowfallCm` | sum of `snowfall` (cm) |
+| `snowDepthMax` | `maxSnowDepthM` | maximum `snow_depth` (m) |
+| `snowHours` | `snowfallHours` | number of hours with `snowfall > 0` |
+| `cloud` | `meanCloudCoverPercent` | mean `cloud_cover` (%) |
+| `windMean` | `meanWindSpeedKmh` | mean `wind_speed_10m` (km/h) |
+| `windMax` | `maxWindSpeedKmh` | maximum `wind_speed_10m` (km/h) |
+| `waveHeight` | `maxWaveHeightM` | maximum `wave_height` (m) |
+| `wavePeriod` | `maxWavePeriodS` | maximum `wave_period` (s) |
+
+The formulas below use the short names. The code uses the descriptive ones.
 
 Nulls in the upstream data must be handled (skip them when aggregating; treat a day with no usable hours as
 unavailable).
