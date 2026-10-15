@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Activity } from './entities/activity.js';
-import { ActivityCatalogue } from './entities/activity-scorers.js';
+import { ActivityCatalogue } from './activities/activity-catalogue.js';
 import type {
   ActivityOutcome,
   DataSource,
@@ -10,7 +10,8 @@ import type {
   MarineDayFeatures,
   WeatherDayFeatures,
 } from './entities/day-features.js';
-import { ScoreScale, type RatedScore } from './entities/score-scale.js';
+import type { RatedScore } from './entities/rated-score.js';
+import { ScoreScale } from './utils/score-scale.js';
 import { DailyFeaturesMapper } from './mappers/daily-features.mapper.js';
 import { FeatureValuesMapper } from './mappers/feature-values.mapper.js';
 

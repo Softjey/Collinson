@@ -95,8 +95,9 @@ Formulas, tables, data and the full design are in [docs/technical-spec.md](docs/
 - **Raw SQL uses Prisma TypedSQL.** Custom validation decorators are shared.
 - **The GraphQL contract is written by hand**, not generated from the models, and exposes no internals.
   Nullable fields are avoided so invalid combinations cannot be expressed.
-- **Activities share one interface and are data**: each activity is a record in a table and one function computes
-  the score from it, so adding an activity is adding a record.
+- **Activities share one interface and are declared**: each activity is a scorer declared from small classes
+  (curves, conditions, combiners), so adding an activity is adding a declaration. The scoring module is written
+  as classes, with descriptive feature names that include units.
 - **Health reports only our own service.** Observability with OpenTelemetry and grafana/otel-lgtm behind a
   flag. Dockerfiles and one docker compose.
 - **Tests:** unit tests for everything, e2e with the NestJS tools and a mocked Open-Meteo.

@@ -1,6 +1,6 @@
-import { ScoreScale } from '../../src/scoring/entities/score-scale.js';
-import type { ActivityScorer } from '../../src/scoring/entities/activity-scorers.js';
-import { FormulaScorer } from '../../src/scoring/entities/activity-scorers.js';
+import { ScoreScale } from '../../src/scoring/utils/score-scale.js';
+import type { ActivityScorer } from '../../src/scoring/activities/activity-scorers.js';
+import { FormulaScorer } from '../../src/scoring/activities/activity-scorers.js';
 import type { DayConditions, DayOutcome } from '../../src/scoring/entities/day-features.js';
 import type { FeatureName } from '../../src/scoring/entities/day-features.js';
 import { FeatureValuesMapper } from '../../src/scoring/mappers/feature-values.mapper.js';

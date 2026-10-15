@@ -8,9 +8,9 @@
 
 ## Goal
 
-The whole scoring model as pure, fully unit-tested code: daily features from hourly data, the activity
-formulas as data, the one function that scores a day from them, the four activities and the categories. No
-database, no HTTP, no import from `weather`. Each activity is a record in a table, so adding one is adding a record.
+The whole scoring model as pure, fully unit-tested classes: daily features from hourly data, the activities
+declared as scorers, and the categories. No database, no HTTP, no import from `weather`. Each activity is a
+declaration, so adding one is adding a declaration.
 
 References: [technical spec](../technical-spec.md) sections 8 and 9;
 [implementation plan](../implementation-plan.md) sections 3.3 and 2 (P8, P9).
@@ -21,25 +21,27 @@ Touches only `src/scoring/` and `test/fixtures/scoring/`.
 
 ### 1. Core
 
-- `math.ts`: `clamp`, piecewise-linear interpolation through anchors (flat outside them), step-table lookup by
+- `utils/math.ts`: `clamp`, piecewise-linear interpolation through anchors (flat outside them), step-table lookup by
   lower bound (so the gaps between printed bands, such as 6.99 to 7, cannot fall through).
-- `category.ts`: round the score to 2 decimals, then map to index 1 to 8 and the category name (spec 8.6).
-- `daily-features.ts`: group hours into local calendar days by IANA time zone and compute the aggregates of
-  spec 8.1. Nulls are skipped; a feature is null only when every hourly value of the day is null.
-- `entities/definition.types.ts`: the types of a formula record, `DayContext` and `DayOutcome` as in plan section 3.3.
-- `entities/activity-definitions.ts`: the four activity records with every weight, threshold, table and anchor of
-  spec section 8 in one place.
-- `utils/score-day.ts`: `scoreFeatures(definition, features)`, the only function that computes a score. Curve kinds,
-  derived features and combiners are registries in `utils/`.
-- `utils/definition-lookup.ts`: lookup by activity and the union of required sources for a set of activities.
-- `mappers/feature-values.mapper.ts`: `FeatureValuesMapper` flattens a `DayContext` into the feature record the formulas read.
-- `scoring.service.ts`: the only thing the module exports, with `score` and `requiredSources`.
+- `entities/day-features.ts`: the plain types of the module: `DayConditions`, `DayOutcome`, the daily features and the
+  hourly inputs, with descriptive names and units.
+- `entities/curves.ts`, `entities/formula-parts.ts`: `Curve` (piecewise linear, step table, polynomial, peak
+  normalised extreme value), `Condition`, `Combiner` and `DerivedFeature`, each with static factories.
+- `entities/activity-scorers.ts`: `ActivityScorer`, `FormulaScorer`, `OppositeScorer` and `ActivityCatalogue`.
+- `entities/activities.ts`: the four activities declared with every weight, threshold, table and anchor of spec
+  section 8 in one place.
+- `entities/score-scale.ts`: `ScoreScale` rounds the score to 2 decimals, then maps it to category index 1 to 8 and
+  the category name (spec 8.6).
+- `mappers/daily-features.mapper.ts`: groups hours into local calendar days by IANA time zone and computes the
+  aggregates of spec 8.1. Nulls are skipped; a feature is null only when every hourly value of the day is null.
+- `mappers/feature-values.mapper.ts`: flattens a `DayConditions` into the feature record the formulas read.
+- `scoring.service.ts`: the only thing the module exports.
 
 ### 2. Outdoor sightseeing (spec 8.4)
 
-- Humidex from `tMax` and `rhMean`, the four rating tables, `HCI = 4 TC + 2 A + 3 P + W`, clamp, then the two
+- Humidex from `maxTemperatureC` and `meanRelativeHumidityPercent`, the four rating tables, `HCI = 4 TC + 2 A + 3 P + W`, clamp, then the two
   caps (0.5 from 6 mm; 0.2 from 60 km/h maximum wind or 25 mm).
-- Exposed as a pure function too, because indoor reuses it.
+- Indoor sightseeing is declared on top of this scorer.
 
 ### 3. Indoor sightseeing (spec 8.5)
 

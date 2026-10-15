@@ -1,7 +1,13 @@
-import type { Activity } from './activity.js';
-import type { Curve } from './curves.js';
-import type { DataSource, DayOutcome, FeatureName, FeatureValues, UnscoredReason } from './day-features.js';
-import type { Combiner, Condition, DerivedFeatures } from './formula-parts.js';
+import type { Activity } from '../entities/activity.js';
+import type { Curve } from '../formulas/curves.js';
+import type {
+  DataSource,
+  DayOutcome,
+  FeatureName,
+  FeatureValues,
+  UnscoredReason,
+} from '../entities/day-features.js';
+import type { Combiner, Condition, DerivedFeatures } from '../formulas/formula-parts.js';
 
 /** Knows how to score one activity for one day. */
 export abstract class ActivityScorer {
@@ -124,25 +130,5 @@ export class OppositeScorer extends ActivityScorer {
     const opposed = this.opposedActivity.score(features);
     if (opposed.kind === 'unscored') return opposed;
     return { kind: 'scored', score: this.range.floor + this.range.spread * (1 - opposed.score) };
-  }
-}
-
-/** The scorers available to the service, looked up by activity. */
-export class ActivityCatalogue {
-  constructor(private readonly scorers: readonly ActivityScorer[]) {}
-
-  scorerFor(activity: Activity): ActivityScorer {
-    const matches = this.scorers.filter((scorer) => scorer.activity === activity);
-    if (matches.length === 0) throw new Error(`No scorer for ${activity}`);
-    if (matches.length > 1) throw new Error(`Duplicate scorer for ${activity}`);
-    return matches[0];
-  }
-
-  requiredSourcesOf(activities: readonly Activity[]): DataSource[] {
-    const sources = new Set<DataSource>();
-    for (const activity of activities) {
-      for (const source of this.scorerFor(activity).requiredSources) sources.add(source);
-    }
-    return [...sources];
   }
 }

@@ -1,4 +1,4 @@
-import { SURFING } from '../entities/activities.js';
+import { SURFING } from '../activities/activities.js';
 import type { DayConditions, MarineDayFeatures } from '../entities/day-features.js';
 import { buildMarine, buildWeatherFeatures } from '../../../test/support/builders/day.js';
 import { curveOf, scoreDay } from '../../../test/support/scoring-helpers.js';

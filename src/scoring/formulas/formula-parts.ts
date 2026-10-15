@@ -1,5 +1,5 @@
 import { clamp } from '../utils/math.js';
-import type { DerivedFeatureName, FeatureName, FeatureValues } from './day-features.js';
+import type { DerivedFeatureName, FeatureName, FeatureValues } from '../entities/day-features.js';
 
 const isMissing = (value: number | null | undefined): boolean => value === null || value === undefined;
 

@@ -1,5 +1,5 @@
 import { loadEventFeatures } from '../../../test/support/scoring-events.js';
-import { OUTDOOR_SIGHTSEEING } from '../entities/activities.js';
+import { OUTDOOR_SIGHTSEEING } from '../activities/activities.js';
 import type { WeatherDayFeatures } from '../entities/day-features.js';
 import { NO_WEATHER, withWeather } from '../../../test/support/builders/day.js';
 import { curveOf, scoreDay, scoreOf, withoutCaps, rate } from '../../../test/support/scoring-helpers.js';

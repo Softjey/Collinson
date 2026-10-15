@@ -1,6 +1,6 @@
 import { FormulaScorer, OppositeScorer } from './activity-scorers.js';
-import { Curve } from './curves.js';
-import { Combiner, Condition, DerivedFeature } from './formula-parts.js';
+import { Curve } from '../formulas/curves.js';
+import { Combiner, Condition, DerivedFeature } from '../formulas/formula-parts.js';
 
 const THERMAL_COMFORT_RATING = Curve.stepTable({
   valueBelowFirstStep: 1,

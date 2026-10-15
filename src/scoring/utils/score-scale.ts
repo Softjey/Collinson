@@ -1,14 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { stepLookup, type Step } from '../utils/math.js';
-
-export type ScoreCategory =
-  'UNSUITABLE' | 'POOR' | 'MARGINAL' | 'ACCEPTABLE' | 'GOOD' | 'VERY_GOOD' | 'EXCELLENT' | 'IDEAL';
-
-export interface RatedScore {
-  score: number;
-  categoryIndex: number;
-  category: ScoreCategory;
-}
+import type { RatedScore } from '../entities/rated-score.js';
+import { stepLookup, type Step } from './math.js';
 
 /** Turns a score into the eight named categories every activity is reported in. */
 @Injectable()

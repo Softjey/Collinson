@@ -112,8 +112,9 @@ src/
                    specs/         unit tests; every subfolder has its own specs/ next to the code it covers
   search/          place-search.module.ts, place-search.resolver.ts, place-search.service.ts, geocoding.client.ts
   weather/         weather.module.ts, weather.service.ts, forecast.client.ts, marine.client.ts
-  scoring/         scoring.module.ts, scoring.service.ts; entities/ holds the activity definitions (the formulas
-                   as data), utils/ holds score-day.ts, curves, combiners, derived features, daily features
+  scoring/         scoring.module.ts, scoring.service.ts; entities/ holds the classes of the model (curves,
+                   conditions, combiners, scorers, the declared activities, the score scale), mappers/ holds
+                   the hourly-to-daily and day-to-feature-record translations, utils/ holds the maths
   activity-scores/ activity-scores.module.ts, activity-scores.resolver.ts, activity-scores.service.ts,
                    date-range.validator.ts, time-zone.service.ts, mappers/
   health/          health.controller.ts
@@ -144,25 +145,37 @@ type DayOutcome =
   | { kind: 'scored'; score: number }
   | { kind: 'unscored'; reason: 'NO_SEA' | 'NO_SNOW' | 'NO_DATA' };
 
-interface DayContext {
+interface DayConditions {
   weather: WeatherDayFeatures | null;                 // null: no usable hours that day
   marine: { hasSea: boolean; features: MarineDayFeatures | null } | null; // null: not requested
 }
 
 interface ScoringService {
-  score(activities: Activity[], day: DayContext): { activity: Activity; outcome: DayOutcome }[];
   requiredSources(activities: Activity[]): DataSource[];    // 'WEATHER' | 'WAVES'
+  summariseWeatherDays(hours: HourlyWeather[], timeZone: string): Map<string, WeatherDayFeatures>;
+  summariseMarineDays(hours: HourlyMarine[], timeZone: string): Map<string, MarineDayFeatures>;
+  score(activities: Activity[], day: DayConditions): { activity: Activity; outcome: DayOutcome }[];
+  rate(score: number): { score: number; categoryIndex: number; category: ScoreCategory };
 }
 ```
 
-An activity is a record, not a class: its sources, gates (the conditions that make a day unscored), factors
-(feature, curve, weight), combiner (`weightedSum` or `geometric`), multipliers and caps. A single function,
-`scoreFeatures(definition, features)`, reads the record and computes the score. Curve kinds (`piecewise`,
-`steps`), derived features (`humidex`, `divide`) and combiners are small registries.
-Indoor sightseeing is a record that is based on the outdoor one (`0.5 + 0.5 * (1 - outdoor)`).
+The model is a small set of classes:
 
-Adding an activity: add its name to `ACTIVITIES` and to the contract enum, then add a record to
-`activity-definitions.ts`. A new curve, derived feature or combiner kind is one entry in its registry.
+- `ActivityScorer` is the one abstraction: an activity, the data sources it needs and `score(features)`.
+- `FormulaScorer` scores from a declaration: rules that leave a day unscored, factors (a feature, a `Curve` that turns
+  it into a utility, a weight), a `Combiner`, multipliers and caps. `OppositeScorer` scores as the opposite of another
+  scorer (`0.5 + 0.5 * (1 - outdoor)` for indoor sightseeing).
+- `Curve`, `Condition`, `Combiner` and `DerivedFeature` are abstract classes with a static factory per kind
+  (`Curve.piecewiseLinear`, `Condition.atLeast`, `Combiner.weightedSum`, `DerivedFeature.humidex`), so a declaration
+  reads as a list of what the activity depends on.
+- `entities/activities.ts` declares the four activities. `ActivityCatalogue` looks a scorer up by activity and
+  collects the sources of a set of activities. `ScoreScale` rounds a score and names its category.
+
+Features have descriptive names with units (`maxTemperatureC`, `meanWindSpeedKmh`, `totalPrecipitationMm`).
+
+Adding an activity: add its name to `ACTIVITIES` and to the contract enum, declare a `FormulaScorer` in
+`entities/activities.ts` and add it to `ALL_ACTIVITY_SCORERS`. A new kind of curve, condition, combiner or derived
+feature is one more subclass with a static factory.
 
 Weather:
 

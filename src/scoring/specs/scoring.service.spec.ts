@@ -1,9 +1,9 @@
 import { Test } from '@nestjs/testing';
 import { ACTIVITIES } from '../entities/activity.js';
 import { withWeatherAndSea } from '../../../test/support/builders/day.js';
-import { ALL_ACTIVITY_SCORERS } from '../entities/activities.js';
-import { ActivityCatalogue } from '../entities/activity-scorers.js';
-import { ScoreScale } from '../entities/score-scale.js';
+import { ALL_ACTIVITY_SCORERS } from '../activities/activities.js';
+import { ActivityCatalogue } from '../activities/activity-catalogue.js';
+import { ScoreScale } from '../utils/score-scale.js';
 import { DailyFeaturesMapper } from '../mappers/daily-features.mapper.js';
 import { FeatureValuesMapper } from '../mappers/feature-values.mapper.js';
 import { ScoringModule } from '../scoring.module.js';
