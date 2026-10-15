@@ -1,5 +1,7 @@
 import { createTestPrisma, truncateAll } from '../../../../test/support/database.js';
 import type { PrismaClient } from '../../../generated/prisma/client.js';
+import { ForecastMapper } from '../../mappers/forecast.mapper.js';
+import { MarineMapper } from '../../mappers/marine.mapper.js';
 import { ForecastRepository } from '../forecast.repository.js';
 import { LocationRepository } from '../location.repository.js';
 import { MarineRepository } from '../marine.repository.js';
@@ -54,8 +56,8 @@ describe('weather repositories', () => {
   beforeAll(() => {
     prisma = createTestPrisma();
     locations = new LocationRepository(prisma);
-    forecasts = new ForecastRepository(prisma);
-    marine = new MarineRepository(prisma);
+    forecasts = new ForecastRepository(prisma, new ForecastMapper());
+    marine = new MarineRepository(prisma, new MarineMapper());
   });
 
   beforeEach(async () => {

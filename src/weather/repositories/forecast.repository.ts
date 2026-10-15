@@ -1,12 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { PrismaClient } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../shared/database/prisma.service.js';
-import { FORECAST_PARSER_VERSION, toStoredForecast } from '../mappers/forecast.mapper.js';
+import { FORECAST_PARSER_VERSION, ForecastMapper } from '../mappers/forecast.mapper.js';
 import type { ForecastData, StoredSnapshot } from '../entities/weather.types.js';
 
 @Injectable()
 export class ForecastRepository {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaClient) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaClient,
+    private readonly mapper: ForecastMapper,
+  ) {}
 
   async insert(
     locationId: number,
@@ -50,6 +53,6 @@ export class ForecastRepository {
     if (!row) {
       return null;
     }
-    return toStoredForecast(row);
+    return this.mapper.toStored(row);
   }
 }

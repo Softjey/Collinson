@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OpenMeteoService } from '../shared/open-meteo/open-meteo.service.js';
-import { toForecastData } from './mappers/forecast.mapper.js';
+import { ForecastMapper } from './mappers/forecast.mapper.js';
 import { fromE2 } from './mappers/convert.js';
 import type { ForecastData, LocationRef } from './entities/weather.types.js';
 
@@ -19,7 +19,10 @@ const HOURLY_VARIABLES = [
 
 @Injectable()
 export class ForecastClient {
-  constructor(private readonly openMeteo: OpenMeteoService) {}
+  constructor(
+    private readonly openMeteo: OpenMeteoService,
+    private readonly mapper: ForecastMapper,
+  ) {}
 
   async fetch(location: Pick<LocationRef, 'latE2' | 'lonE2' | 'timezone'>): Promise<ForecastData> {
     const response = await this.openMeteo.forecast({
@@ -30,6 +33,6 @@ export class ForecastClient {
       timeformat: 'unixtime',
       hourly: HOURLY_VARIABLES.join(','),
     });
-    return toForecastData(response);
+    return this.mapper.toData(response);
   }
 }

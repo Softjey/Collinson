@@ -6,6 +6,7 @@ import {
   OpenMeteoUnavailableError,
 } from '../../shared/open-meteo/open-meteo.errors.js';
 import type { OpenMeteoService } from '../../shared/open-meteo/open-meteo.service.js';
+import { MarineMapper } from '../mappers/marine.mapper.js';
 import { MarineClient } from '../marine.client.js';
 
 function fixture(name: string): Record<string, unknown> & { hourly: Record<string, unknown[]> } {
@@ -21,7 +22,7 @@ function clientReturning(response: unknown) {
       return response;
     },
   } as unknown as OpenMeteoService;
-  return { client: new MarineClient(service), calls };
+  return { client: new MarineClient(service, new MarineMapper()), calls };
 }
 
 const location = { latE2: 4138, lonE2: 221, timezone: 'Europe/Madrid' };
@@ -57,7 +58,7 @@ describe('MarineClient', () => {
         },
       } as unknown as OpenMeteoService;
 
-      await expect(new MarineClient(service).fetch(location)).rejects.toBe(error);
+      await expect(new MarineClient(service, new MarineMapper()).fetch(location)).rejects.toBe(error);
     });
   });
 });

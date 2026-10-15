@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OpenMeteoService } from '../shared/open-meteo/open-meteo.service.js';
-import { toMarineData } from './mappers/marine.mapper.js';
+import { MarineMapper } from './mappers/marine.mapper.js';
 import { fromE2 } from './mappers/convert.js';
 import type { LocationRef, MarineData } from './entities/weather.types.js';
 
@@ -14,7 +14,10 @@ const HOURLY_VARIABLES = [
 
 @Injectable()
 export class MarineClient {
-  constructor(private readonly openMeteo: OpenMeteoService) {}
+  constructor(
+    private readonly openMeteo: OpenMeteoService,
+    private readonly mapper: MarineMapper,
+  ) {}
 
   async fetch(location: Pick<LocationRef, 'latE2' | 'lonE2' | 'timezone'>): Promise<MarineData> {
     const response = await this.openMeteo.marine({
@@ -26,6 +29,6 @@ export class MarineClient {
       cell_selection: 'sea',
       hourly: HOURLY_VARIABLES.join(','),
     });
-    return toMarineData(response);
+    return this.mapper.toData(response);
   }
 }

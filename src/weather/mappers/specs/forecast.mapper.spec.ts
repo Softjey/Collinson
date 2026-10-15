@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { ForecastResponse } from '../../../shared/open-meteo/schemas/forecast.schema.js';
-import { FORECAST_PARSER_VERSION, toForecastData, toStoredForecast } from '../forecast.mapper.js';
+import { FORECAST_PARSER_VERSION, ForecastMapper } from '../forecast.mapper.js';
 
 function fixture(): Record<string, unknown> & { hourly: Record<string, unknown[]> } {
   const path = fileURLToPath(
@@ -10,13 +10,15 @@ function fixture(): Record<string, unknown> & { hourly: Record<string, unknown[]
   return JSON.parse(readFileSync(path, 'utf8'));
 }
 
-describe('toForecastData', () => {
+const mapper = new ForecastMapper();
+
+describe('ForecastMapper.toData', () => {
   it('starts the parser version at 1', () => {
     expect(FORECAST_PARSER_VERSION).toBe(1);
   });
 
   it('maps 192 hours to rows with UTC instants', () => {
-    const data = toForecastData(fixture() as unknown as ForecastResponse);
+    const data = mapper.toData(fixture() as unknown as ForecastResponse);
 
     expect(data.hours).toHaveLength(192);
     expect(data.hours[0]?.timeUtc).toEqual(new Date('2026-10-12T22:00:00Z'));
@@ -25,7 +27,7 @@ describe('toForecastData', () => {
   });
 
   it('maps the grid point, elevation and offset', () => {
-    const data = toForecastData(fixture() as unknown as ForecastResponse);
+    const data = mapper.toData(fixture() as unknown as ForecastResponse);
 
     expect(data).toMatchObject({
       apiLatitude: 41.4,
@@ -36,7 +38,7 @@ describe('toForecastData', () => {
   });
 
   it('keeps nulls as null', () => {
-    const data = toForecastData(fixture() as unknown as ForecastResponse);
+    const data = mapper.toData(fixture() as unknown as ForecastResponse);
 
     expect(data.hours[5]?.temperature2m).toBeNull();
     expect(data.hours[191]?.snowDepth).toBeNull();
@@ -46,11 +48,11 @@ describe('toForecastData', () => {
   it('maps a missing elevation to null', () => {
     const response = fixture();
     delete response.elevation;
-    expect(toForecastData(response as unknown as ForecastResponse)).toMatchObject({ elevationM: null });
+    expect(mapper.toData(response as unknown as ForecastResponse)).toMatchObject({ elevationM: null });
   });
 });
 
-describe('toStoredForecast', () => {
+describe('ForecastMapper.toStored', () => {
   const hour = {
     snapshotId: 7,
     timeUtc: new Date('2026-10-12T22:00:00Z'),
@@ -69,7 +71,7 @@ describe('toStoredForecast', () => {
   it('wraps the snapshot and drops the snapshot id from the hours', () => {
     const fetchedAt = new Date('2026-10-12T20:00:00Z');
 
-    const stored = toStoredForecast({
+    const stored = mapper.toStored({
       id: 7,
       fetchedAt,
       apiLatitude: 41.4,

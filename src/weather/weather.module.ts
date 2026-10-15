@@ -6,6 +6,8 @@ import { ForecastRepository } from './repositories/forecast.repository.js';
 import { LocationRepository } from './repositories/location.repository.js';
 import { MarineClient } from './marine.client.js';
 import { MarineRepository } from './repositories/marine.repository.js';
+import { ForecastMapper } from './mappers/forecast.mapper.js';
+import { MarineMapper } from './mappers/marine.mapper.js';
 import { WeatherService } from './weather.service.js';
 
 @Module({
@@ -17,6 +19,8 @@ import { WeatherService } from './weather.service.js';
     MarineClient,
     ForecastRepository,
     MarineRepository,
+    ForecastMapper,
+    MarineMapper,
   ],
   exports: [WeatherService],
 })

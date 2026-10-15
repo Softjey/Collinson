@@ -1,12 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { PrismaClient } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../shared/database/prisma.service.js';
-import { MARINE_PARSER_VERSION, toStoredMarine } from '../mappers/marine.mapper.js';
+import { MARINE_PARSER_VERSION, MarineMapper } from '../mappers/marine.mapper.js';
 import type { MarineData, StoredSnapshot } from '../entities/weather.types.js';
 
 @Injectable()
 export class MarineRepository {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaClient) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaClient,
+    private readonly mapper: MarineMapper,
+  ) {}
 
   async insert(locationId: number, data: MarineData, fetchedAt: Date): Promise<StoredSnapshot<MarineData>> {
     const created = await this.prisma.marineSnapshot.create({
@@ -33,6 +36,6 @@ export class MarineRepository {
     if (!row) {
       return null;
     }
-    return toStoredMarine(row);
+    return this.mapper.toStored(row);
   }
 }
