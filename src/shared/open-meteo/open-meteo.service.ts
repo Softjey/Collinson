@@ -21,18 +21,18 @@ function validated<T extends z.ZodType>(schema: T, body: unknown): z.output<T> {
 
 export class OpenMeteoService {
   constructor(
-    private readonly clients: { forecast: EndpointClient; marine: EndpointClient; geocoding: EndpointClient },
+    private readonly endpointClients: { forecast: EndpointClient; marine: EndpointClient; geocoding: EndpointClient },
   ) {}
 
   async forecast(params: QueryParams): Promise<ForecastResponse> {
-    return validated(forecastResponseSchema, await this.clients.forecast.get(params));
+    return validated(forecastResponseSchema, await this.endpointClients.forecast.get(params));
   }
 
   async marine(params: QueryParams): Promise<MarineResponse> {
-    return validated(marineResponseSchema, await this.clients.marine.get(params));
+    return validated(marineResponseSchema, await this.endpointClients.marine.get(params));
   }
 
   async geocoding(params: QueryParams): Promise<GeocodingResponse> {
-    return validated(geocodingResponseSchema, await this.clients.geocoding.get(params));
+    return validated(geocodingResponseSchema, await this.endpointClients.geocoding.get(params));
   }
 }
