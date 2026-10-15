@@ -2,36 +2,20 @@ import { jest } from '@jest/globals';
 import type { AppConfig } from '../../shared/config/env.schema.js';
 import type { Clock } from '../../shared/clock.js';
 import type { GeocodingClient } from '../geocoding.client.js';
-import type { Place } from '../entities/place.js';
+import { toPlaceSearchKey } from '../../../test/support/builders/place-search-key.js';
+import { buildPlace } from '../../../test/support/builders/place.js';
 import type { StoredPlaceSearch } from '../entities/stored-place-search.js';
 import type { PlaceSearchMapper } from '../mappers/place-search.mapper.js';
 import type { PlaceRepository } from '../repositories/place.repository.js';
 import { PlaceSearchKeyMapper } from '../mappers/place-search-key.mapper.js';
 import { PlaceSearchService } from '../place-search.service.js';
 
-const keys = new PlaceSearchKeyMapper();
-const searchKey = keys.toKey.bind(keys);
 const DAY_MS = 24 * 60 * 60 * 1000;
 const NOW = new Date('2026-01-31T12:00:00Z');
 const input = { name: '  Zakopane ', count: 10, language: 'en' };
 
-function place(id: number): Place {
-  return {
-    id,
-    name: `Place ${id}`,
-    country: null,
-    countryCode: null,
-    admin1: null,
-    latitude: 1,
-    longitude: 2,
-    elevation: null,
-    timezone: null,
-    population: null,
-  };
-}
-
 function stored(ageDays: number): StoredPlaceSearch {
-  return { fetchedAt: new Date(NOW.getTime() - ageDays * DAY_MS), places: [place(1)] };
+  return { fetchedAt: new Date(NOW.getTime() - ageDays * DAY_MS), places: [buildPlace(1)] };
 }
 
 function createService(options: { stored?: StoredPlaceSearch | null; geocoderError?: Error } = {}) {
@@ -39,7 +23,7 @@ function createService(options: { stored?: StoredPlaceSearch | null; geocoderErr
   if (options.geocoderError) {
     search.mockRejectedValue(options.geocoderError);
   } else {
-    search.mockResolvedValue([place(2)]);
+    search.mockResolvedValue([buildPlace(2)]);
   }
   const findSearch = jest
     .fn<PlaceRepository['findSearch']>()
@@ -51,7 +35,7 @@ function createService(options: { stored?: StoredPlaceSearch | null; geocoderErr
     { findSearch, saveSearch } as unknown as PlaceRepository,
     { placeSearchCacheDays: 30 } as AppConfig,
     clock,
-    keys,
+    new PlaceSearchKeyMapper(),
     { toStoredSearch: (row: unknown) => row } as unknown as PlaceSearchMapper,
   );
   return { service, search, findSearch, saveSearch };
@@ -61,7 +45,7 @@ describe('PlaceSearchService', () => {
   it('returns a fresh stored search without calling the geocoder', async () => {
     const { service, search, saveSearch } = createService({ stored: stored(29) });
 
-    await expect(service.search(input)).resolves.toEqual([place(1)]);
+    await expect(service.search(input)).resolves.toEqual([buildPlace(1)]);
 
     expect(search).not.toHaveBeenCalled();
     expect(saveSearch).not.toHaveBeenCalled();
@@ -72,22 +56,22 @@ describe('PlaceSearchService', () => {
 
     await service.search(input);
 
-    expect(findSearch).toHaveBeenCalledWith(searchKey(input));
+    expect(findSearch).toHaveBeenCalledWith(toPlaceSearchKey(input));
   });
 
   it('calls the geocoder and stores the result when nothing is stored', async () => {
     const { service, search, saveSearch } = createService();
 
-    await expect(service.search(input)).resolves.toEqual([place(2)]);
+    await expect(service.search(input)).resolves.toEqual([buildPlace(2)]);
 
     expect(search).toHaveBeenCalledWith(input);
-    expect(saveSearch).toHaveBeenCalledWith(searchKey(input), [place(2)], NOW);
+    expect(saveSearch).toHaveBeenCalledWith(toPlaceSearchKey(input), [buildPlace(2)], NOW);
   });
 
   it('refreshes a stored search older than the cache period', async () => {
     const { service, search, saveSearch } = createService({ stored: stored(31) });
 
-    await expect(service.search(input)).resolves.toEqual([place(2)]);
+    await expect(service.search(input)).resolves.toEqual([buildPlace(2)]);
 
     expect(search).toHaveBeenCalledTimes(1);
     expect(saveSearch).toHaveBeenCalledTimes(1);
@@ -96,7 +80,7 @@ describe('PlaceSearchService', () => {
   it('returns the stale stored search when the geocoder fails', async () => {
     const { service, saveSearch } = createService({ stored: stored(90), geocoderError: new Error('down') });
 
-    await expect(service.search(input)).resolves.toEqual([place(1)]);
+    await expect(service.search(input)).resolves.toEqual([buildPlace(1)]);
 
     expect(saveSearch).not.toHaveBeenCalled();
   });

@@ -1,24 +1,12 @@
 import { listPublicTables } from '../../../generated/prisma/sql.js';
-import { createTestPrisma, truncateAll } from '../../../../test/support/database.js';
-import type { PrismaClient } from '../../../generated/prisma/client.js';
+import { useTestDatabase } from '../../../../test/support/database.js';
 
 describe('database schema', () => {
-  let prisma: PrismaClient;
-
-  beforeAll(() => {
-    prisma = createTestPrisma();
-  });
-
-  beforeEach(async () => {
-    await truncateAll(prisma);
-  });
-
-  afterAll(async () => {
-    await prisma.$disconnect();
-  });
+  const database = useTestDatabase();
+  const createLocation = (lonE2 = 1250) => database.prisma.location.create({ data: { latE2: 4185, lonE2 } });
 
   it('has been created by the migrations', async () => {
-    const rows = await prisma.$queryRawTyped(listPublicTables());
+    const rows = await database.prisma.$queryRawTyped(listPublicTables());
     const tables = rows.map((row) => row.tableName);
 
     expect(tables).toEqual(
@@ -36,27 +24,27 @@ describe('database schema', () => {
   });
 
   it('stores a location', async () => {
-    const location = await prisma.location.create({ data: { latE2: 4185, lonE2: 1250 } });
+    const location = await createLocation();
 
     expect(location.elevationM).toBeNull();
     expect(location.timezone).toBeNull();
   });
 
   it('rejects a duplicate location with the same rounded coordinates', async () => {
-    await prisma.location.create({ data: { latE2: 4185, lonE2: 1250 } });
+    await createLocation();
 
-    await expect(prisma.location.create({ data: { latE2: 4185, lonE2: 1250 } })).rejects.toThrow();
+    await expect(createLocation()).rejects.toThrow();
   });
 
   it('allows locations that differ in one coordinate', async () => {
-    await prisma.location.create({ data: { latE2: 4185, lonE2: 1250 } });
+    await createLocation();
 
-    await expect(prisma.location.create({ data: { latE2: 4185, lonE2: 1251 } })).resolves.toBeDefined();
+    await expect(createLocation(1251)).resolves.toBeDefined();
   });
 
   it('deletes the hours when a forecast snapshot is deleted', async () => {
-    const location = await prisma.location.create({ data: { latE2: 4185, lonE2: 1250 } });
-    const snapshot = await prisma.forecastSnapshot.create({
+    const location = await createLocation();
+    const snapshot = await database.prisma.forecastSnapshot.create({
       data: {
         locationId: location.id,
         parserVersion: 1,
@@ -72,14 +60,14 @@ describe('database schema', () => {
       },
     });
 
-    await prisma.forecastSnapshot.delete({ where: { id: snapshot.id } });
+    await database.prisma.forecastSnapshot.delete({ where: { id: snapshot.id } });
 
-    expect(await prisma.forecastHour.count()).toBe(0);
+    expect(await database.prisma.forecastHour.count()).toBe(0);
   });
 
   it('deletes the hours when a marine snapshot is deleted', async () => {
-    const location = await prisma.location.create({ data: { latE2: 4185, lonE2: 1250 } });
-    const snapshot = await prisma.marineSnapshot.create({
+    const location = await createLocation();
+    const snapshot = await database.prisma.marineSnapshot.create({
       data: {
         locationId: location.id,
         parserVersion: 1,
@@ -88,16 +76,16 @@ describe('database schema', () => {
       },
     });
 
-    await prisma.marineSnapshot.delete({ where: { id: snapshot.id } });
+    await database.prisma.marineSnapshot.delete({ where: { id: snapshot.id } });
 
-    expect(await prisma.marineHour.count()).toBe(0);
+    expect(await database.prisma.marineHour.count()).toBe(0);
   });
 
   it('deletes the hits when a place search is deleted but keeps the places', async () => {
-    const place = await prisma.place.create({
+    const place = await database.prisma.place.create({
       data: { id: 3169070, name: 'Rome', latitude: 41.89, longitude: 12.48 },
     });
-    const search = await prisma.placeSearch.create({
+    const search = await database.prisma.placeSearch.create({
       data: {
         query: 'rome',
         language: 'en',
@@ -106,16 +94,16 @@ describe('database schema', () => {
       },
     });
 
-    await prisma.placeSearch.delete({ where: { id: search.id } });
+    await database.prisma.placeSearch.delete({ where: { id: search.id } });
 
-    expect(await prisma.placeSearchHit.count()).toBe(0);
-    expect(await prisma.place.count()).toBe(1);
+    expect(await database.prisma.placeSearchHit.count()).toBe(0);
+    expect(await database.prisma.place.count()).toBe(1);
   });
 
   it('rejects a second search with the same cache key', async () => {
     const data = { query: 'rome', language: 'en', countryCode: '', resultCount: 10 };
-    await prisma.placeSearch.create({ data });
+    await database.prisma.placeSearch.create({ data });
 
-    await expect(prisma.placeSearch.create({ data })).rejects.toThrow();
+    await expect(database.prisma.placeSearch.create({ data })).rejects.toThrow();
   });
 });

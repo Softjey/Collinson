@@ -1,18 +1,6 @@
+import { buildPlace } from '../../../../test/support/builders/place.js';
 import { PlaceSearchMapper } from '../place-search.mapper.js';
 import type { PlaceSearchWithPlaces } from '../../repositories/place.repository.js';
-
-const place = (id: number) => ({
-  id,
-  name: `Place ${id}`,
-  country: null,
-  countryCode: null,
-  admin1: null,
-  latitude: 1,
-  longitude: 2,
-  elevation: null,
-  timezone: null,
-  population: null,
-});
 
 const row = (ids: number[]): PlaceSearchWithPlaces => ({
   id: 1,
@@ -23,7 +11,7 @@ const row = (ids: number[]): PlaceSearchWithPlaces => ({
   fetchedAt: new Date('2026-01-01T00:00:00Z'),
   createdAt: new Date(),
   updatedAt: new Date(),
-  hits: ids.map((id) => ({ place: place(id) })),
+  hits: ids.map((id) => ({ place: buildPlace(id) })),
 });
 
 const mapper = new PlaceSearchMapper();
@@ -32,7 +20,7 @@ describe('PlaceSearchMapper.toStoredSearch', () => {
   it('keeps the fetch time and the order of the hits', () => {
     expect(mapper.toStoredSearch(row([3, 1, 2]))).toEqual({
       fetchedAt: new Date('2026-01-01T00:00:00Z'),
-      places: [place(3), place(1), place(2)],
+      places: [buildPlace(3), buildPlace(1), buildPlace(2)],
     });
   });
 
