@@ -2,6 +2,7 @@ import { createTestPrisma, truncateAll } from '../../../../test/support/database
 import type { PrismaClient } from '../../../generated/prisma/client.js';
 import type { PrismaService } from '../../../shared/database/prisma.service.js';
 import type { Place } from '../../entities/place.js';
+import type { SearchKey } from '../../mappers/search-key.mapper.js';
 import { PlaceRepository } from '../place.repository.js';
 import { PlaceSearchMapper } from '../../mappers/place-search.mapper.js';
 import { SearchKeyMapper } from '../../mappers/search-key.mapper.js';
@@ -27,11 +28,15 @@ function place(id: number, overrides: Partial<Place> = {}): Place {
 describe('PlaceRepository', () => {
   let prisma: PrismaClient;
   let repository: PlaceRepository;
+  const find = async (searchKey: SearchKey) => {
+    const row = await repository.findSearch(searchKey);
+    return row && new PlaceSearchMapper().toStoredSearch(row);
+  };
   const key = searchKey({ name: 'Zakopane', count: 10, language: 'en' });
 
   beforeAll(() => {
     prisma = createTestPrisma();
-    repository = new PlaceRepository(prisma as unknown as PrismaService, new PlaceSearchMapper());
+    repository = new PlaceRepository(prisma as unknown as PrismaService);
   });
 
   beforeEach(async () => {
@@ -43,7 +48,7 @@ describe('PlaceRepository', () => {
   });
 
   it('finds nothing for a search that was never stored', async () => {
-    await expect(repository.findSearch(key)).resolves.toBeNull();
+    await expect(find(key)).resolves.toBeNull();
   });
 
   it('stores a search and returns its places in order', async () => {
@@ -52,7 +57,7 @@ describe('PlaceRepository', () => {
 
     await repository.saveSearch(key, places, fetchedAt);
 
-    await expect(repository.findSearch(key)).resolves.toEqual({ fetchedAt, places });
+    await expect(find(key)).resolves.toEqual({ fetchedAt, places });
   });
 
   it('stores an empty search', async () => {
@@ -60,7 +65,7 @@ describe('PlaceRepository', () => {
 
     await repository.saveSearch(key, [], fetchedAt);
 
-    await expect(repository.findSearch(key)).resolves.toEqual({ fetchedAt, places: [] });
+    await expect(find(key)).resolves.toEqual({ fetchedAt, places: [] });
   });
 
   it('upserts places by id and updates a changed name', async () => {
@@ -79,7 +84,7 @@ describe('PlaceRepository', () => {
     await repository.saveSearch(key, places, new Date());
 
     await expect(prisma.place.count()).resolves.toBe(2);
-    expect((await repository.findSearch(key))?.places.map((p) => p.id)).toEqual([1, 2, 1]);
+    expect((await find(key))?.places.map((p) => p.id)).toEqual([1, 2, 1]);
     await expect(prisma.place.findUnique({ where: { id: 2 } })).resolves.toMatchObject({
       country: null,
       elevation: null,
@@ -94,7 +99,7 @@ describe('PlaceRepository', () => {
 
     await repository.saveSearch(key, [place(3), place(4)], second);
 
-    const stored = await repository.findSearch(key);
+    const stored = await find(key);
     expect(stored?.fetchedAt).toEqual(second);
     expect(stored?.places.map((p) => p.id)).toEqual([3, 4]);
     await expect(prisma.placeSearch.count()).resolves.toBe(1);
@@ -107,17 +112,17 @@ describe('PlaceRepository', () => {
     await repository.saveSearch(key, [place(1), place(2)], new Date());
     await repository.saveSearch(other, [place(2)], new Date());
 
-    expect((await repository.findSearch(key))?.places.map((p) => p.id)).toEqual([1, 2]);
-    expect((await repository.findSearch(other))?.places.map((p) => p.id)).toEqual([2]);
+    expect((await find(key))?.places.map((p) => p.id)).toEqual([1, 2]);
+    expect((await find(other))?.places.map((p) => p.id)).toEqual([2]);
     await expect(prisma.place.count()).resolves.toBe(2);
   });
 
   it('keeps searches with different keys apart', async () => {
     await repository.saveSearch(key, [place(1)], new Date());
 
-    await expect(repository.findSearch({ ...key, language: 'pl' })).resolves.toBeNull();
-    await expect(repository.findSearch({ ...key, countryCode: 'PL' })).resolves.toBeNull();
-    await expect(repository.findSearch({ ...key, resultCount: 5 })).resolves.toBeNull();
+    await expect(find({ ...key, language: 'pl' })).resolves.toBeNull();
+    await expect(find({ ...key, countryCode: 'PL' })).resolves.toBeNull();
+    await expect(find({ ...key, resultCount: 5 })).resolves.toBeNull();
   });
 
   it('leaves the previous hits in place when a refresh fails', async () => {
@@ -127,7 +132,7 @@ describe('PlaceRepository', () => {
     const broken = place(2, { latitude: Number.NaN, name: null as unknown as string });
     await expect(repository.saveSearch(key, [broken], new Date())).rejects.toThrow();
 
-    const stored = await repository.findSearch(key);
+    const stored = await find(key);
     expect(stored?.places.map((p) => p.id)).toEqual([1]);
     expect(stored?.fetchedAt).toEqual(fetchedAt);
   });

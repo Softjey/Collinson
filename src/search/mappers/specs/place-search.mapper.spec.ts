@@ -1,4 +1,5 @@
-import { PlaceSearchMapper, type PlaceSearchWithPlaces } from '../place-search.mapper.js';
+import { PlaceSearchMapper } from '../place-search.mapper.js';
+import type { PlaceSearchWithPlaces } from '../../repositories/place.repository.js';
 
 const place = (id: number) => ({
   id,

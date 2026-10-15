@@ -3,7 +3,8 @@ import type { AppConfig } from '../../shared/config/env.schema.js';
 import type { Clock } from '../../shared/clock.js';
 import type { GeocodingClient } from '../geocoding.client.js';
 import type { Place } from '../entities/place.js';
-import type { StoredSearch } from '../mappers/place-search.mapper.js';
+import type { StoredSearch } from '../entities/stored-search.js';
+import type { PlaceSearchMapper } from '../mappers/place-search.mapper.js';
 import type { PlaceRepository } from '../repositories/place.repository.js';
 import { SearchKeyMapper } from '../mappers/search-key.mapper.js';
 import { SearchService } from '../search.service.js';
@@ -40,7 +41,9 @@ function createService(options: { stored?: StoredSearch | null; geocoderError?: 
   } else {
     search.mockResolvedValue([place(2)]);
   }
-  const findSearch = jest.fn<PlaceRepository['findSearch']>().mockResolvedValue(options.stored ?? null);
+  const findSearch = jest
+    .fn<PlaceRepository['findSearch']>()
+    .mockResolvedValue((options.stored ?? null) as never);
   const saveSearch = jest.fn<PlaceRepository['saveSearch']>().mockResolvedValue();
   const clock: Clock = { now: () => NOW };
   const service = new SearchService(
@@ -49,6 +52,7 @@ function createService(options: { stored?: StoredSearch | null; geocoderError?: 
     { placeSearchCacheDays: 30 } as AppConfig,
     clock,
     keys,
+    { toStoredSearch: (row: unknown) => row } as unknown as PlaceSearchMapper,
   );
   return { service, search, findSearch, saveSearch };
 }

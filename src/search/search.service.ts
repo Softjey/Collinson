@@ -6,7 +6,8 @@ import type { AppConfig } from '../shared/config/env.schema.js';
 import { GeocodingClient } from './geocoding.client.js';
 import type { Place } from './entities/place.js';
 import { PlaceRepository } from './repositories/place.repository.js';
-import type { StoredSearch } from './mappers/place-search.mapper.js';
+import type { StoredSearch } from './entities/stored-search.js';
+import { PlaceSearchMapper } from './mappers/place-search.mapper.js';
 import { SearchKeyMapper } from './mappers/search-key.mapper.js';
 import type { SearchLocationsArgs } from './entities/search-locations.args.js';
 
@@ -22,11 +23,13 @@ export class SearchService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     private readonly clock: Clock,
     private readonly keys: SearchKeyMapper,
+    private readonly storedSearches: PlaceSearchMapper,
   ) {}
 
   async search(input: SearchLocationsArgs): Promise<Place[]> {
     const key = this.keys.toKey(input);
-    const stored = await this.places.findSearch(key);
+    const row = await this.places.findSearch(key);
+    const stored = row && this.storedSearches.toStoredSearch(row);
 
     if (stored && this.isFresh(stored)) {
       return stored.places;
