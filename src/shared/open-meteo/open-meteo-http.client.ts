@@ -18,8 +18,8 @@ export interface OpenMeteoHttpOptions {
 
 export class OpenMeteoHttpClient {
   constructor(
-    private readonly http: HttpService,
-    private readonly options: OpenMeteoHttpOptions,
+    private readonly httpService: HttpService,
+    private readonly openMeteoHttpOptions: OpenMeteoHttpOptions,
   ) {}
 
   get(params: QueryParams): Promise<unknown> {

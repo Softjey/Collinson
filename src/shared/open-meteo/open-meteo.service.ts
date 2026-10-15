@@ -21,7 +21,7 @@ function validated<T extends z.ZodType>(schema: T, body: unknown): z.output<T> {
 
 export class OpenMeteoService {
   constructor(
-    private readonly clients: { forecast: EndpointClient; marine: EndpointClient; geocoding: EndpointClient },
+    private readonly endpointClients: { forecast: EndpointClient; marine: EndpointClient; geocoding: EndpointClient },
   ) {}
 
   async forecast(params: QueryParams): Promise<ForecastResponse> {
