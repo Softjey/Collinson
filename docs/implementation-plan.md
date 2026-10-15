@@ -41,7 +41,7 @@ These are not recorded in DECISIONS.md until confirmed. The tickets below assume
 | P1 | GraphQL driver | Apollo Server 5 on Express (`@nestjs/apollo`). |
 | P2 | Contract location | `contracts/graphql/schema.graphql`, loaded by the service as `typePaths`. One file, so the contract and the implementation cannot diverge. `docs/graphql-schema.graphql` is moved there. |
 | P3 | Package manager, test runner | pnpm, Jest (unit and e2e). |
-| P4 | Offline time zone library | `@photostructure/tz-lookup` (small, no native code). Its border accuracy is enough because the same zone is passed to Open-Meteo, so validation and day grouping always agree. |
+| P4 | Offline time zone library (confirmed) | `@photostructure/tz-lookup` (small, no native code). Its border accuracy is enough because the same zone is passed to Open-Meteo, so validation and day grouping always agree. |
 | P5 | Environment variables | See section 3.6. |
 | P6 | Retry policy | One retry on network error, timeout and HTTP 5xx. No retry on 429 or other 4xx. |
 | P7 | Activity result when sources disagree | Any required source unavailable gives `ActivityDataUnavailable` (`RATE_LIMITED` if any failure was a 429, otherwise `TEMPORARILY_UNAVAILABLE`). Else any source too old gives `ActivityDataTooOld` with `lastUpdatedAt` of the oldest such source. Else `ActivityDayScores`. |
@@ -77,11 +77,12 @@ Rules:
 - `search` and `weather` never import each other and share no foreign keys. Each owns its tables.
 - `scoring` has no NestJS providers that touch I/O, no Prisma types and no imports from `weather`. It defines the
   input shapes it needs.
-- `activity-scores` is the only module that knows both `weather` and `scoring`.
+- `location` owns the `Location` row and `weather` does not look locations up: it receives the location from its
+  caller. `activity-scores` is the only module that knows `location`, `weather` and `scoring`.
 - Only the module's service uses the mappers. Clients return the validated API response and repositories return
   database rows, so translation happens in one layer.
-- A module exports only its service, and only when another module needs it. Currently that is `WeatherService` and
-  `ScoringService`; `search` exports nothing. Public methods take and return plain types owned by the module.
+- A module exports only its service, and only when another module needs it. Currently that is `LocationService`, `WeatherService`
+  and `ScoringService`; `search` exports nothing. Public methods take and return plain types owned by the module.
 - Validation of an upstream response belongs to `shared/open-meteo`: `OpenMeteoService` returns validated,
   already camelCased data, and `weather` and `search` never see raw Open-Meteo shapes.
 - `shared` holds only technical code with no domain knowledge. Splitting a module into its own service means
@@ -111,6 +112,7 @@ src/
                    utils/         other pure helpers (freshness policy, scoring maths and curves)
                    specs/         unit tests; every subfolder has its own specs/ next to the code it covers
   search/          place-search.module.ts, place-search.resolver.ts, place-search.service.ts, geocoding.client.ts
+  location/        location.module.ts, location.service.ts (`findOrCreate`, `getElevation`); entities/, repositories/
   weather/         weather.module.ts, weather.service.ts, forecast.client.ts, marine.client.ts
   scoring/         scoring.module.ts, scoring.service.ts; entities/ holds only types (activity names, day
                    features, rated score), formulas/ the building blocks (curves, conditions, combiners, derived
@@ -178,7 +180,7 @@ Adding an activity: add its name to `ACTIVITIES` and to the contract enum, decla
 `activities/activities.ts` and add it to `ALL_ACTIVITY_SCORERS`. A new kind of curve, condition, combiner or derived
 feature is one more subclass with a static factory.
 
-Weather:
+Weather (it takes the location from its caller and does not look it up):
 
 ```ts
 type SourceResult<T> =
@@ -187,7 +189,6 @@ type SourceResult<T> =
   | { status: 'unavailable'; cause: 'TEMPORARILY_UNAVAILABLE' | 'RATE_LIMITED' };
 
 interface WeatherService {
-  resolveLocation(lat: number, lon: number, timezone: string): Promise<LocationRef>; // find or create
   getForecast(loc: LocationRef, coverThrough: LocalDate): Promise<SourceResult<ForecastData>>;
   getMarine(loc: LocationRef, coverThrough: LocalDate): Promise<SourceResult<MarineData>>;
 }
@@ -213,7 +214,7 @@ not usable -> fetch (single-flight key "<source>:<locationId>", retry per P6)
 1. `ValidationPipe` checks the shape with class-validator (ranges, date format, activities).
 2. Round the coordinates to 2 decimals. Look up the time zone offline. Validate the date range against "today"
    in that zone, using an injected `Clock`.
-3. `weather.resolveLocation` finds or creates the `Location` (`latE2`, `lonE2`, `timezone`).
+3. `location.findOrCreate` finds or creates the `Location` (`latE2`, `lonE2`, `timezone`).
 4. The union of `requiredSources` of the requested activities decides what is loaded. Forecast and marine are
    loaded in parallel, each once per request.
 5. Hours are grouped into local calendar days with the IANA zone (not `utcOffsetSeconds`, which is wrong across

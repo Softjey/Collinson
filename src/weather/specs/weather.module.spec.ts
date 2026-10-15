@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 import { ConfigModule } from '../../shared/config/config.module.js';
 import { DatabaseModule } from '../../shared/database/database.module.js';
 import { PrismaService } from '../../shared/database/prisma.service.js';
-import { LocationRepository } from '../repositories/location.repository.js';
+import { ForecastRepository } from '../repositories/forecast.repository.js';
 import { WeatherModule } from '../weather.module.js';
 import { WeatherService } from '../weather.service.js';
 
@@ -37,6 +37,6 @@ describe('WeatherModule', () => {
   it('exposes only WeatherService to importing modules', async () => {
     const moduleRef = await compile();
 
-    expect(() => moduleRef.get(LocationRepository, { strict: true })).toThrow();
+    expect(() => moduleRef.get(ForecastRepository, { strict: true })).toThrow();
   });
 });

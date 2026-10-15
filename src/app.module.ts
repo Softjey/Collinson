@@ -5,6 +5,7 @@ import { APP_PIPE } from '@nestjs/core';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ActivityScoresModule } from './activity-scores/activity-scores.module.js';
 import { HealthModule } from './health/health.module.js';
+import { LocationModule } from './location/location.module.js';
 import { ScoringModule } from './scoring/scoring.module.js';
 import { PlaceSearchModule } from './search/place-search.module.js';
 import { ConfigModule } from './shared/config/config.module.js';
@@ -31,6 +32,7 @@ const CONTRACT_PATH = fileURLToPath(new URL('../contracts/graphql/schema.graphql
       formatError: formatGraphQLError,
     }),
     ScoringModule,
+    LocationModule,
     WeatherModule,
     PlaceSearchModule,
     ActivityScoresModule,

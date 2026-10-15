@@ -10,18 +10,11 @@ import {
   buildMarineData,
 } from '../../../test/support/builders/weather.js';
 import type { Clock } from '../../shared/clock.js';
-import type {
-  ForecastData,
-  LocationRef,
-  MarineData,
-  SourceResult,
-  StoredSnapshot,
-} from '../entities/weather.types.js';
+import type { ForecastData, MarineData, SourceResult, StoredSnapshot } from '../entities/weather.types.js';
 import type { ForecastMapper } from '../mappers/forecast.mapper.js';
 import type { MarineMapper } from '../mappers/marine.mapper.js';
 import type { ForecastClient } from '../forecast.client.js';
 import type { ForecastRepository } from '../repositories/forecast.repository.js';
-import type { LocationRepository } from '../repositories/location.repository.js';
 import type { MarineClient } from '../marine.client.js';
 import type { MarineRepository } from '../repositories/marine.repository.js';
 import { WeatherService } from '../weather.service.js';
@@ -78,13 +71,9 @@ function setup(
   const marineSnapshots = snapshotStore<MarineData>(options.marine ? { 1: options.marine } : {});
   const forecastClient = { fetch: jest.fn(options.forecastFetch ?? (async () => freshForecastData)) };
   const marineClient = { fetch: jest.fn(options.marineFetch ?? (async () => seaData)) };
-  const locations = {
-    findOrCreate: jest.fn(async (input: Omit<LocationRef, 'id'>) => ({ id: 1, ...input })),
-  };
   const service = new WeatherService(
     clock,
     { weatherRefreshHours: 6, wavesRefreshHours: 24, maxStaleHours: 48 },
-    locations as unknown as LocationRepository,
     forecastClient as unknown as ForecastClient,
     marineClient as unknown as MarineClient,
     forecastSnapshots as unknown as ForecastRepository,
@@ -92,7 +81,7 @@ function setup(
     identityMapper as unknown as ForecastMapper,
     identityMapper as unknown as MarineMapper,
   );
-  return { service, forecastSnapshots, marineSnapshots, forecastClient, marineClient, locations };
+  return { service, forecastSnapshots, marineSnapshots, forecastClient, marineClient };
 }
 
 const forecastRow = (hours: number, data = forecastData): StoredSnapshot<ForecastData> => ({
@@ -107,21 +96,6 @@ const marineRow = (hours: number, data = seaData): StoredSnapshot<MarineData> =>
 });
 
 describe('WeatherService', () => {
-  describe('resolveLocation', () => {
-    it('finds or creates the location with rounded coordinates and the time zone', async () => {
-      const { service, locations } = setup();
-
-      const result = await service.resolveLocation(41.404, -2.178, 'Europe/Madrid');
-
-      expect(locations.findOrCreate).toHaveBeenCalledWith({
-        latE2: 4140,
-        lonE2: -218,
-        timezone: 'Europe/Madrid',
-      });
-      expect(result).toEqual({ id: 1, latE2: 4140, lonE2: -218, timezone: 'Europe/Madrid' });
-    });
-  });
-
   describe('getForecast', () => {
     it('reuses a snapshot within the interval that covers the date, without calling upstream', async () => {
       const { service, forecastClient, forecastSnapshots } = setup({ forecast: forecastRow(2) });

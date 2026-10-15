@@ -1,9 +1,9 @@
-import { BARCELONA, buildForecastData, buildMarineData } from '../../../../test/support/builders/weather.js';
+import { insertLocation } from '../../../../test/support/builders/location.js';
+import { buildForecastData, buildMarineData } from '../../../../test/support/builders/weather.js';
 import { useTestDatabase } from '../../../../test/support/database.js';
 import { ForecastMapper } from '../../mappers/forecast.mapper.js';
 import { MarineMapper } from '../../mappers/marine.mapper.js';
 import { ForecastRepository } from '../forecast.repository.js';
-import { LocationRepository } from '../location.repository.js';
 import { MarineRepository } from '../marine.repository.js';
 
 const forecastMapper = new ForecastMapper();
@@ -11,7 +11,6 @@ const marineMapper = new MarineMapper();
 
 describe('weather repositories', () => {
   const database = useTestDatabase();
-  let locations: LocationRepository;
   let forecasts: ForecastRepository;
   let marine: MarineRepository;
 
@@ -25,94 +24,13 @@ describe('weather repositories', () => {
   };
 
   beforeAll(() => {
-    locations = new LocationRepository(database.prisma);
     forecasts = new ForecastRepository(database.prisma);
     marine = new MarineRepository(database.prisma);
   });
 
-  describe('LocationRepository', () => {
-    it('creates a location with its time zone', async () => {
-      const location = await locations.findOrCreate(BARCELONA);
-
-      expect(location).toEqual({ id: expect.any(Number), ...BARCELONA });
-      expect(await database.prisma.location.count()).toBe(1);
-    });
-
-    it('is idempotent', async () => {
-      const first = await locations.findOrCreate(BARCELONA);
-      const second = await locations.findOrCreate(BARCELONA);
-
-      expect(second).toEqual(first);
-      expect(await database.prisma.location.count()).toBe(1);
-    });
-
-    it('is safe under concurrent calls', async () => {
-      const results = await Promise.all([
-        locations.findOrCreate(BARCELONA),
-        locations.findOrCreate(BARCELONA),
-        locations.findOrCreate(BARCELONA),
-      ]);
-
-      expect(new Set(results.map((location) => location.id)).size).toBe(1);
-      expect(await database.prisma.location.count()).toBe(1);
-    });
-
-    it('keeps the stored time zone when called with another one', async () => {
-      await locations.findOrCreate(BARCELONA);
-
-      const again = await locations.findOrCreate({ ...BARCELONA, timezone: 'UTC' });
-
-      expect(again.timezone).toBe('Europe/Madrid');
-    });
-
-    it('fills in a missing time zone', async () => {
-      const { id } = await locations.findOrCreate(BARCELONA);
-      await database.prisma.location.update({ where: { id }, data: { timezone: null } });
-
-      const again = await locations.findOrCreate(BARCELONA);
-
-      expect(again).toMatchObject({ id, timezone: 'Europe/Madrid' });
-      await expect(database.prisma.location.findUnique({ where: { id } })).resolves.toMatchObject({
-        timezone: 'Europe/Madrid',
-      });
-    });
-
-    it('keeps locations that differ in one coordinate apart', async () => {
-      const a = await locations.findOrCreate(BARCELONA);
-      const b = await locations.findOrCreate({ ...BARCELONA, lonE2: 219 });
-
-      expect(b.id).not.toBe(a.id);
-    });
-
-    it('keeps the stored time zone when asked again with another one', async () => {
-      await locations.findOrCreate(BARCELONA);
-
-      const again = await locations.findOrCreate({ ...BARCELONA, timezone: 'Europe/Paris' });
-
-      expect(again.timezone).toBe('Europe/Madrid');
-    });
-
-    it('fills in a missing time zone', async () => {
-      await database.prisma.location.create({ data: { latE2: 4140, lonE2: 218 } });
-
-      const location = await locations.findOrCreate(BARCELONA);
-
-      expect(location.timezone).toBe('Europe/Madrid');
-    });
-
-    it('updates the elevation', async () => {
-      const location = await locations.findOrCreate(BARCELONA);
-
-      await locations.updateElevation(location.id, 33.5);
-
-      const row = await database.prisma.location.findUniqueOrThrow({ where: { id: location.id } });
-      expect(row.elevationM).toBe(33.5);
-    });
-  });
-
   describe('ForecastRepository', () => {
     it('writes a snapshot with 192 hours and updates the location elevation', async () => {
-      const location = await locations.findOrCreate(BARCELONA);
+      const location = await insertLocation(database.prisma);
       const fetchedAt = new Date('2026-10-13T08:00:00Z');
 
       const stored = await forecasts.insert(location.id, buildForecastData(), fetchedAt);
@@ -125,7 +43,7 @@ describe('weather repositories', () => {
     });
 
     it('writes nothing when a hour row is invalid', async () => {
-      const location = await locations.findOrCreate(BARCELONA);
+      const location = await insertLocation(database.prisma);
       const data = buildForecastData();
       data.hours.push(...buildForecastData({}, 1).hours);
 
@@ -138,8 +56,8 @@ describe('weather repositories', () => {
     });
 
     it('does not clear the elevation when the response has none', async () => {
-      const location = await locations.findOrCreate(BARCELONA);
-      await locations.updateElevation(location.id, 12);
+      const location = await insertLocation(database.prisma);
+      await database.prisma.location.update({ where: { id: location.id }, data: { elevationM: 12 } });
 
       await forecasts.insert(location.id, buildForecastData({ elevationM: null }, 2), new Date());
 
@@ -148,7 +66,7 @@ describe('weather repositories', () => {
     });
 
     it('reads the snapshot back with its hours in time order and nulls kept', async () => {
-      const location = await locations.findOrCreate(BARCELONA);
+      const location = await insertLocation(database.prisma);
       const data = buildForecastData();
       await forecasts.insert(location.id, data, new Date('2026-10-13T08:00:00Z'));
 
@@ -159,7 +77,7 @@ describe('weather repositories', () => {
     });
 
     it('returns the newest snapshot by fetchedAt', async () => {
-      const location = await locations.findOrCreate(BARCELONA);
+      const location = await insertLocation(database.prisma);
       await forecasts.insert(
         location.id,
         buildForecastData({ apiLatitude: 1 }, 2),
@@ -182,7 +100,7 @@ describe('weather repositories', () => {
     });
 
     it('breaks a fetchedAt tie by id', async () => {
-      const location = await locations.findOrCreate(BARCELONA);
+      const location = await insertLocation(database.prisma);
       const fetchedAt = new Date('2026-10-13T08:00:00Z');
       await forecasts.insert(location.id, buildForecastData({ apiLatitude: 1 }, 2), fetchedAt);
       const second = await forecasts.insert(location.id, buildForecastData({ apiLatitude: 2 }, 2), fetchedAt);
@@ -194,14 +112,14 @@ describe('weather repositories', () => {
     });
 
     it('reads nothing for a location without snapshots', async () => {
-      const location = await locations.findOrCreate(BARCELONA);
+      const location = await insertLocation(database.prisma);
 
       expect(await latestForecast(location.id)).toBeNull();
     });
 
     it('does not return the snapshot of another location', async () => {
-      const a = await locations.findOrCreate(BARCELONA);
-      const b = await locations.findOrCreate({ ...BARCELONA, lonE2: 219 });
+      const a = await insertLocation(database.prisma);
+      const b = await insertLocation(database.prisma, { lonE2: 219 });
       await forecasts.insert(a.id, buildForecastData({}, 2), new Date());
 
       expect(await latestForecast(b.id)).toBeNull();
@@ -210,7 +128,7 @@ describe('weather repositories', () => {
 
   describe('MarineRepository', () => {
     it('stores a coastal snapshot with its hours and reads it back', async () => {
-      const location = await locations.findOrCreate(BARCELONA);
+      const location = await insertLocation(database.prisma);
       const data = buildMarineData();
 
       await marine.insert(location.id, data, new Date('2026-10-13T08:00:00Z'));
@@ -221,7 +139,7 @@ describe('weather repositories', () => {
     });
 
     it('stores an inland snapshot without hours and reads it back with hasSea false', async () => {
-      const location = await locations.findOrCreate(BARCELONA);
+      const location = await insertLocation(database.prisma);
 
       await marine.insert(
         location.id,
@@ -236,7 +154,7 @@ describe('weather repositories', () => {
     });
 
     it('returns the newest snapshot by fetchedAt, then by id', async () => {
-      const location = await locations.findOrCreate(BARCELONA);
+      const location = await insertLocation(database.prisma);
       const tie = new Date('2026-10-13T14:00:00Z');
       await marine.insert(location.id, buildMarineData({ apiLatitude: 1 }), new Date('2026-10-13T20:00:00Z'));
       await marine.insert(location.id, buildMarineData({ apiLatitude: 2 }), tie);
@@ -250,7 +168,7 @@ describe('weather repositories', () => {
     });
 
     it('reads nothing for a location without snapshots', async () => {
-      const location = await locations.findOrCreate(BARCELONA);
+      const location = await insertLocation(database.prisma);
 
       expect(await latestMarine(location.id)).toBeNull();
     });

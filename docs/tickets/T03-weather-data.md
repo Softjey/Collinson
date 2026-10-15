@@ -48,7 +48,7 @@ Touches only `src/weather/` and `test/fixtures/weather/`. No import from `search
 
 - `freshness.policy.ts`: the pure decision of plan section 3.4 (reuse, fetch, stale, too old, unavailable).
 - `single-flight.ts` usage: one in-flight fetch per `"<source>:<locationId>"`; a failed flight is not kept.
-- `WeatherService` with `resolveLocation`, `getForecast`, `getMarine` returning `SourceResult` (plan 3.3).
+- `WeatherService` with `getForecast`, `getMarine` returning `SourceResult` (plan 3.3).
 - Intervals and the stale limit come from configuration.
 
 ## Tests first

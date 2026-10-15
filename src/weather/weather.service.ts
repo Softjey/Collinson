@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Clock } from '../shared/clock.js';
 import { APP_CONFIG } from '../shared/config/config.module.js';
 import type { AppConfig } from '../shared/config/env.schema.js';
-import { toE2 } from '../shared/coordinates.js';
 import {
   OpenMeteoBadRequestError,
   OpenMeteoRateLimitedError,
@@ -25,7 +24,6 @@ import { ForecastMapper } from './mappers/forecast.mapper.js';
 import { MarineMapper } from './mappers/marine.mapper.js';
 import { MarineClient } from './marine.client.js';
 import { ForecastRepository, type ForecastSnapshotRow } from './repositories/forecast.repository.js';
-import { LocationRepository } from './repositories/location.repository.js';
 import { MarineRepository, type MarineSnapshotRow } from './repositories/marine.repository.js';
 import { decideAfterFailure, isReusable } from './utils/freshness.policy.js';
 
@@ -57,7 +55,6 @@ export class WeatherService {
   constructor(
     private readonly clock: Clock,
     @Inject(APP_CONFIG) private readonly weatherSettings: WeatherSettings,
-    private readonly locationRepository: LocationRepository,
     forecastClient: ForecastClient,
     marineClient: MarineClient,
     forecastRepository: ForecastRepository,
@@ -81,14 +78,6 @@ export class WeatherService {
       mapper: marineMapper,
       mustCoverRequestedDates: (marineData) => marineData.hasSea,
     };
-  }
-
-  resolveLocation(latitude: number, longitude: number, timezone: string): Promise<LocationRef> {
-    return this.locationRepository.findOrCreate({
-      latE2: toE2(latitude),
-      lonE2: toE2(longitude),
-      timezone,
-    });
   }
 
   getForecast(location: LocationRef, coverThrough: LocalDate): Promise<SourceResult<ForecastData>> {
