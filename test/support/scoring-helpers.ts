@@ -1,12 +1,11 @@
-import { compileCurve } from '../utils/curves.js';
-import type { ActivityDefinition, DayContext, FormulaDefinition } from '../entities/definition.types.js';
-import type { WeatherDayFeatures } from '../utils/daily-features.js';
-import { FeatureValuesMapper } from '../mappers/feature-values.mapper.js';
-import { scoreFeatures } from '../utils/score-day.js';
-
-export const NO_WEATHER: DayContext = { weather: null, marine: null };
-
-export const withWeather = (weather: WeatherDayFeatures): DayContext => ({ weather, marine: null });
+import { compileCurve } from '../../src/scoring/utils/curves.js';
+import type {
+  ActivityDefinition,
+  DayContext,
+  FormulaDefinition,
+} from '../../src/scoring/entities/definition.types.js';
+import { FeatureValuesMapper } from '../../src/scoring/mappers/feature-values.mapper.js';
+import { scoreFeatures } from '../../src/scoring/utils/score-day.js';
 
 export function curveOf(definition: FormulaDefinition, feature: string): (x: number) => number {
   const entry = [...definition.factors, ...(definition.multipliers ?? [])].find(

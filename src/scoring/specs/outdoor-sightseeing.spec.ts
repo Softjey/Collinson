@@ -1,23 +1,11 @@
-import { loadEventFeatures } from '../../../test/fixtures/scoring/load.js';
+import { loadEventFeatures } from '../../../test/support/scoring-events.js';
 import { OUTDOOR_SIGHTSEEING } from '../entities/activity-definitions.js';
 import { categorize } from '../utils/category.js';
 import type { WeatherDayFeatures } from '../utils/daily-features.js';
-import { curveOf, NO_WEATHER, scoreDay, scoreOf, withoutCaps, withWeather } from './helpers.js';
+import { NO_WEATHER, withWeather } from '../../../test/support/builders/day.js';
+import { curveOf, scoreDay, scoreOf, withoutCaps } from '../../../test/support/scoring-helpers.js';
 
-const pleasantDay: WeatherDayFeatures = {
-  tMax: 22,
-  rhMean: 50,
-  precip: 0,
-  rain: 0,
-  snowfallSum: 0,
-  snowDepthMax: 0,
-  snowHours: 0,
-  cloud: 20,
-  windMean: 15,
-  windMax: 20,
-};
-
-const day = (overrides: Partial<WeatherDayFeatures>) => withWeather({ ...pleasantDay, ...overrides });
+const day = (overrides: Partial<WeatherDayFeatures>) => withWeather(overrides);
 
 const outdoor = (overrides: Partial<WeatherDayFeatures> = {}) => scoreOf(OUTDOOR_SIGHTSEEING, day(overrides));
 const holidayClimateIndex = (overrides: Partial<WeatherDayFeatures> = {}) =>

@@ -1,17 +1,14 @@
-import { loadEventFeatures } from '../../../test/fixtures/scoring/load.js';
+import { loadEventFeatures } from '../../../test/support/scoring-events.js';
 import { SKIING } from '../entities/activity-definitions.js';
 import { categorize } from '../utils/category.js';
 import type { WeatherDayFeatures } from '../utils/daily-features.js';
-import { curveOf, NO_WEATHER, scoreDay, scoreOf, withWeather } from './helpers.js';
+import { NO_WEATHER, withWeather } from '../../../test/support/builders/day.js';
+import { curveOf, scoreDay, scoreOf } from '../../../test/support/scoring-helpers.js';
 
-const snowyDay: WeatherDayFeatures = {
+const snowyDay: Partial<WeatherDayFeatures> = {
   tMax: 3,
   rhMean: 70,
-  precip: 0,
-  rain: 0,
-  snowfallSum: 0,
   snowDepthMax: 0.5,
-  snowHours: 0,
   cloud: 25,
   windMean: 0,
   windMax: 5,

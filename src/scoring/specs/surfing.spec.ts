@@ -1,26 +1,15 @@
 import { SURFING } from '../entities/activity-definitions.js';
-import type { MarineDayFeatures, WeatherDayFeatures } from '../utils/daily-features.js';
+import type { MarineDayFeatures } from '../utils/daily-features.js';
 import type { DayContext } from '../entities/definition.types.js';
-import { curveOf, scoreDay } from './helpers.js';
+import { buildMarine, buildWeatherFeatures } from '../../../test/support/builders/day.js';
+import { curveOf, scoreDay } from '../../../test/support/scoring-helpers.js';
 
-const weather: WeatherDayFeatures = {
-  tMax: 20,
-  rhMean: 60,
-  precip: 0,
-  rain: 0,
-  snowfallSum: 0,
-  snowDepthMax: 0,
-  snowHours: 0,
-  cloud: 30,
-  windMean: 10,
-  windMax: 15,
-};
-
-const waves: MarineDayFeatures = { waveHeight: 1.5, wavePeriod: 13 };
+const weather = buildWeatherFeatures({ windMax: 15 });
+const waves = buildMarine().features as MarineDayFeatures;
 
 const context = (overrides: Partial<DayContext> = {}): DayContext => ({
   weather,
-  marine: { hasSea: true, features: waves },
+  marine: buildMarine(),
   ...overrides,
 });
 

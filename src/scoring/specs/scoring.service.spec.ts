@@ -1,25 +1,11 @@
 import { Test } from '@nestjs/testing';
 import { ACTIVITIES } from '../entities/activity.js';
-import type { DayContext } from '../entities/definition.types.js';
+import { withWeatherAndSea } from '../../../test/support/builders/day.js';
 import { FeatureValuesMapper } from '../mappers/feature-values.mapper.js';
 import { ScoringModule } from '../scoring.module.js';
 import { ScoringService } from '../scoring.service.js';
 
-const day: DayContext = {
-  weather: {
-    tMax: 22,
-    rhMean: 50,
-    precip: 0,
-    rain: 0,
-    snowfallSum: 0,
-    snowDepthMax: 0,
-    snowHours: 0,
-    cloud: 20,
-    windMean: 15,
-    windMax: 15,
-  },
-  marine: { hasSea: true, features: { waveHeight: 1.5, wavePeriod: 13 } },
-};
+const day = withWeatherAndSea({ windMax: 15 });
 
 describe('ScoringService', () => {
   const service = new ScoringService(new FeatureValuesMapper());

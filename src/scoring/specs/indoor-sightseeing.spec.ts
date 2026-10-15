@@ -1,23 +1,11 @@
-import { loadEventFeatures } from '../../../test/fixtures/scoring/load.js';
+import { loadEventFeatures } from '../../../test/support/scoring-events.js';
 import { INDOOR_SIGHTSEEING, OUTDOOR_SIGHTSEEING } from '../entities/activity-definitions.js';
 import { categorize } from '../utils/category.js';
 import type { WeatherDayFeatures } from '../utils/daily-features.js';
-import { NO_WEATHER, scoreDay, scoreOf, withWeather } from './helpers.js';
+import { NO_WEATHER, withWeather } from '../../../test/support/builders/day.js';
+import { scoreDay, scoreOf } from '../../../test/support/scoring-helpers.js';
 
-const pleasantDay: WeatherDayFeatures = {
-  tMax: 22,
-  rhMean: 50,
-  precip: 0,
-  rain: 0,
-  snowfallSum: 0,
-  snowDepthMax: 0,
-  snowHours: 0,
-  cloud: 20,
-  windMean: 15,
-  windMax: 20,
-};
-
-const indoor = (overrides: Partial<WeatherDayFeatures> = {}) => withWeather({ ...pleasantDay, ...overrides });
+const indoor = (overrides: Partial<WeatherDayFeatures> = {}) => withWeather(overrides);
 
 const indoorOf = (overrides: Partial<WeatherDayFeatures> = {}) =>
   scoreOf(INDOOR_SIGHTSEEING, indoor(overrides));
