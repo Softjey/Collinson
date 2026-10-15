@@ -5,10 +5,10 @@ import type { SearchLocationsArgs } from './entities/search-locations.args.js';
 
 @Injectable()
 export class GeocodingClient {
-  constructor(private readonly openMeteo: OpenMeteoService) {}
+  constructor(private readonly openMeteoService: OpenMeteoService) {}
 
   async search({ name, count, language, countryCode }: SearchLocationsArgs): Promise<Place[]> {
-    const { results } = await this.openMeteo.geocoding({ name, count, language, countryCode });
+    const { results } = await this.openMeteoService.geocoding({ name, count, language, countryCode });
     return results;
   }
 }

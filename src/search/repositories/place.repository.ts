@@ -28,17 +28,17 @@ const uniqueKey = (key: SearchKey) => ({ query_language_countryCode_resultCount:
 
 @Injectable()
 export class PlaceRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   findSearch(key: SearchKey): Promise<PlaceSearchWithPlaces | null> {
-    return this.prisma.placeSearch.findUnique({
+    return this.prismaService.placeSearch.findUnique({
       where: uniqueKey(key),
       include: placeSearchWithPlaces,
     });
   }
 
   async saveSearch(key: SearchKey, places: Place[], fetchedAt: Date): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
+    await this.prismaService.$transaction(async (tx) => {
       await storePlaces(tx, places);
       const search = await tx.placeSearch.upsert({
         where: uniqueKey(key),

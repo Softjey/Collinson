@@ -5,10 +5,10 @@ import { SearchService } from './search.service.js';
 
 @Resolver()
 export class SearchResolver {
-  constructor(private readonly search: SearchService) {}
+  constructor(private readonly searchService: SearchService) {}
 
   @Query('searchLocations')
   searchLocations(@Args() args: SearchLocationsArgs): Promise<Place[]> {
-    return this.search.search(args);
+    return this.searchService.search(args);
   }
 }

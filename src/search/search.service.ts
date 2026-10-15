@@ -18,26 +18,26 @@ export class SearchService {
   private readonly logger = new Logger(SearchService.name);
 
   constructor(
-    private readonly geocoding: GeocodingClient,
-    private readonly places: PlaceRepository,
-    @Inject(APP_CONFIG) private readonly config: AppConfig,
+    private readonly geocodingClient: GeocodingClient,
+    private readonly placeRepository: PlaceRepository,
+    @Inject(APP_CONFIG) private readonly appConfig: AppConfig,
     private readonly clock: Clock,
-    private readonly keys: SearchKeyMapper,
-    private readonly storedSearches: PlaceSearchMapper,
+    private readonly searchKeyMapper: SearchKeyMapper,
+    private readonly placeSearchMapper: PlaceSearchMapper,
   ) {}
 
   async search(input: SearchLocationsArgs): Promise<Place[]> {
-    const key = this.keys.toKey(input);
-    const row = await this.places.findSearch(key);
-    const stored = row && this.storedSearches.toStoredSearch(row);
+    const key = this.searchKeyMapper.toKey(input);
+    const row = await this.placeRepository.findSearch(key);
+    const stored = row && this.placeSearchMapper.toStoredSearch(row);
 
     if (stored && this.isFresh(stored)) {
       return stored.places;
     }
 
     try {
-      const found = await this.geocoding.search(input);
-      await this.places.saveSearch(key, found, this.clock.now());
+      const found = await this.geocodingClient.search(input);
+      await this.placeRepository.saveSearch(key, found, this.clock.now());
       return found;
     } catch (error) {
       this.logger.warn(`Place search failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -52,7 +52,7 @@ export class SearchService {
 
   private isFresh(stored: StoredSearch): boolean {
     return (
-      this.clock.now().getTime() - stored.fetchedAt.getTime() < this.config.placeSearchCacheDays * DAY_MS
+      this.clock.now().getTime() - stored.fetchedAt.getTime() < this.appConfig.placeSearchCacheDays * DAY_MS
     );
   }
 }
