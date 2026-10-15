@@ -23,15 +23,16 @@ const rainMultiplier = curveOf(SKIING, 'totalRainMm');
 const depthMultiplier = curveOf(SKIING, 'maxSnowDepthM');
 
 describe('skiing snow utility', () => {
-  it('is 0.9805 without snowing hours', () => {
-    expect(snowUtility(0)).toBeCloseTo(0.9805);
+  it('is 0.98 without snowing hours', () => {
+    expect(snowUtility(0)).toBe(0.98);
   });
 
-  it('is 0.055 at 5 hours', () => {
-    expect(snowUtility(5)).toBeCloseTo(0.055);
+  it('falls with each snowing hour', () => {
+    expect(snowUtility(2)).toBe(0.81);
+    expect(snowUtility(5)).toBe(0.06);
   });
 
-  it('is 0 above 5 hours', () => {
+  it('is 0 from 6 hours', () => {
     expect(snowUtility(6)).toBe(0);
     expect(snowUtility(24)).toBe(0);
   });
@@ -43,22 +44,22 @@ describe('skiing wind utility', () => {
   });
 
   it('is applied to the mean wind converted from km/h to m/s', () => {
-    expect(windUtility(10)).toBeCloseTo((104.37 - 67.8 - 19 + 10) / 104.37);
+    expect(windUtility(10)).toBe(0.26);
     const windy = scoreOf(SKIING, day({ meanWindSpeedKmh: 36 }));
     const calm = scoreOf(SKIING, day({ meanWindSpeedKmh: 0 }));
 
-    expect(calm - windy).toBeCloseTo(0.279 * (1 - windUtility(10)));
+    expect(calm - windy).toBeCloseTo(0.279 * (1 - 0.26));
   });
 
-  it('is 0 in a gale', () => {
+  it('is 0 from 14 m/s', () => {
+    expect(windUtility(14)).toBe(0);
     expect(windUtility(100 / 3.6)).toBe(0);
   });
 });
 
 describe('skiing temperature utility', () => {
-  it('is 1 at the peak near 3 C', () => {
-    expect(temperatureUtility(3)).toBeGreaterThan(0.99);
-    expect(temperatureUtility(3)).toBeLessThanOrEqual(1);
+  it('is 1 at the peak at 3 C', () => {
+    expect(temperatureUtility(3)).toBe(1);
   });
 
   it('is never above 1', () => {
@@ -67,19 +68,19 @@ describe('skiing temperature utility', () => {
     }
   });
 
-  it('is about 0 below -12 C', () => {
-    expect(temperatureUtility(-12)).toBeLessThan(0.01);
-    expect(temperatureUtility(-25)).toBeCloseTo(0, 5);
+  it('is 0 at and below -12 C', () => {
+    expect(temperatureUtility(-12)).toBe(0);
+    expect(temperatureUtility(-25)).toBe(0);
   });
 
-  it('is 0 at and above about 15 C', () => {
+  it('is 0 at and above 15 C', () => {
     expect(temperatureUtility(15)).toBe(0);
     expect(temperatureUtility(30)).toBe(0);
   });
 
-  it('is between 0 and 1 in the usable range', () => {
-    expect(temperatureUtility(-5)).toBeGreaterThan(0);
-    expect(temperatureUtility(10)).toBeGreaterThan(0);
+  it('falls faster on the warm side than on the cold side', () => {
+    expect(temperatureUtility(-2)).toBe(0.56);
+    expect(temperatureUtility(10)).toBe(0.35);
   });
 });
 
@@ -177,7 +178,7 @@ describe('skiing outcome', () => {
   });
 
   it.each([
-    ['2022-12-02', 0.46],
+    ['2022-12-02', 0.45],
     ['2023-12-01', 0.13],
     ['2023-12-02', 0.14],
   ])('scores Beaver Creek on %s as %s', (date, expected) => {
