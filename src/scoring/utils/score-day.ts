@@ -7,17 +7,10 @@ import type {
   DayOutcome,
   FormulaDefinition,
 } from '../entities/definition.types.js';
+import { toFeatureValues } from '../mappers/feature-values.mapper.js';
 import { computeDerived, type FeatureValues } from './derived-features.js';
 
 const scored = (score: number): DayOutcome => ({ kind: 'scored', score });
-
-function toFeatureValues({ weather, marine }: DayContext): FeatureValues {
-  return {
-    ...weather,
-    ...marine?.features,
-    ...(marine ? { hasSea: marine.hasSea ? 1 : 0 } : {}),
-  };
-}
 
 const isMissing = (value: number | null | undefined): boolean => value === null || value === undefined;
 
