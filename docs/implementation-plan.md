@@ -78,6 +78,8 @@ Rules:
 - `scoring` has no NestJS providers that touch I/O, no Prisma types and no imports from `weather`. It defines the
   input shapes it needs.
 - `activity-scores` is the only module that knows both `weather` and `scoring`.
+- Only the module's service uses the mappers. Clients return the validated API response and repositories return
+  database rows, so translation happens in one layer.
 - A module exports only its service, and only when another module needs it. Currently that is `WeatherService` and
   `ScoringService`; `search` exports nothing. Public methods take and return plain types owned by the module.
 - Validation of an upstream response belongs to `shared/open-meteo`: `OpenMeteoService` returns validated,
@@ -105,7 +107,7 @@ src/
                    entities/      types owned by the module
                    mappers/       stateless injectable classes with methods that translate between layers (API response to domain,
                                   database row to domain, input to cache key)
-                   repositories/  Prisma access, returns domain types
+                   repositories/  Prisma access: take domain types in, return database rows out, no mapping
                    utils/         other pure helpers (freshness policy, scoring maths and curves)
                    specs/         unit tests; every subfolder has its own specs/ next to the code it covers
   search/          search.module.ts, search.resolver.ts, search.service.ts, geocoding.client.ts
