@@ -69,10 +69,62 @@ describe('OpenMeteoService', () => {
   it('sends geocoding requests only to the geocoding endpoint', async () => {
     const { clients, service } = createService();
 
-    await expect(service.geocoding({ name: 'Rome' })).resolves.toEqual(geocodingBody);
+    await expect(service.geocoding({ name: 'Rome' })).resolves.toEqual({
+      results: [
+        {
+          id: 1,
+          name: 'Rome',
+          latitude: 41.9,
+          longitude: 12.5,
+          elevation: null,
+          country: null,
+          countryCode: null,
+          admin1: null,
+          timezone: null,
+          population: null,
+        },
+      ],
+    });
 
     expect(clients.geocoding.get).toHaveBeenCalledWith({ name: 'Rome' });
     expect(clients.forecast.get).not.toHaveBeenCalled();
+  });
+
+  it('maps a full geocoding result to camelCase', async () => {
+    const { clients, service } = createService();
+    clients.geocoding.get.mockResolvedValue({
+      results: [
+        {
+          id: 3080165,
+          name: 'Zakopane',
+          latitude: 49.3,
+          longitude: 19.9,
+          elevation: 838,
+          country: 'Poland',
+          country_code: 'PL',
+          admin1: 'Lesser Poland',
+          timezone: 'Europe/Warsaw',
+          population: 27266,
+        },
+      ],
+    });
+
+    await expect(service.geocoding({ name: 'Zakopane' })).resolves.toEqual({
+      results: [
+        {
+          id: 3080165,
+          name: 'Zakopane',
+          latitude: 49.3,
+          longitude: 19.9,
+          elevation: 838,
+          country: 'Poland',
+          countryCode: 'PL',
+          admin1: 'Lesser Poland',
+          timezone: 'Europe/Warsaw',
+          population: 27266,
+        },
+      ],
+    });
   });
 
   it('treats a geocoding response without results as an empty list', async () => {
