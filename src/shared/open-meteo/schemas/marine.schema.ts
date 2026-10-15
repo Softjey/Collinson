@@ -1,19 +1,20 @@
 import { z } from 'zod';
-import { hasEqualLengths, hourlyValues } from './hourly.js';
+import { hourlySchema } from './hourly.js';
+
+export const MARINE_HOURLY_VARIABLES = [
+  'wave_height',
+  'wave_period',
+  'wave_direction',
+  'swell_wave_height',
+  'swell_wave_period',
+] as const;
+
+export type MarineHourlyVariable = (typeof MARINE_HOURLY_VARIABLES)[number];
 
 export const marineResponseSchema = z.object({
   latitude: z.number(),
   longitude: z.number(),
-  hourly: z
-    .object({
-      time: z.array(z.number().int()).min(1),
-      wave_height: hourlyValues,
-      wave_period: hourlyValues,
-      wave_direction: hourlyValues,
-      swell_wave_height: hourlyValues,
-      swell_wave_period: hourlyValues,
-    })
-    .refine(hasEqualLengths, { message: 'hourly arrays must have the same length' }),
+  hourly: hourlySchema(MARINE_HOURLY_VARIABLES, 1),
 });
 
 export type MarineResponse = z.output<typeof marineResponseSchema>;

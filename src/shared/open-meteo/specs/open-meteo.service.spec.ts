@@ -35,6 +35,8 @@ const marineBody = {
   },
 };
 
+const point = { latitude: 41.4, longitude: 2.18, timezone: 'Europe/Madrid' };
+
 const geocodingBody = { results: [{ id: 1, name: 'Rome', latitude: 41.9, longitude: 12.5 }] };
 
 function createService() {
@@ -50,9 +52,18 @@ describe('OpenMeteoService', () => {
   it('sends forecast requests only to the forecast endpoint and returns the parsed body', async () => {
     const { clients, service } = createService();
 
-    await expect(service.forecast({ latitude: 1 })).resolves.toEqual(forecastBody);
+    await expect(service.forecast(point)).resolves.toEqual(forecastBody);
 
-    expect(clients.forecast.get).toHaveBeenCalledWith({ latitude: 1 });
+    expect(clients.forecast.get).toHaveBeenCalledWith({
+      latitude: 41.4,
+      longitude: 2.18,
+      timezone: 'Europe/Madrid',
+      forecast_days: 8,
+      timeformat: 'unixtime',
+      hourly:
+        'temperature_2m,relative_humidity_2m,precipitation,rain,snowfall,snow_depth,cloud_cover,' +
+        'wind_speed_10m,wind_gusts_10m,weather_code',
+    });
     expect(clients.marine.get).not.toHaveBeenCalled();
     expect(clients.geocoding.get).not.toHaveBeenCalled();
   });
@@ -60,9 +71,17 @@ describe('OpenMeteoService', () => {
   it('sends marine requests only to the marine endpoint', async () => {
     const { clients, service } = createService();
 
-    await expect(service.marine({ latitude: 2 })).resolves.toEqual(marineBody);
+    await expect(service.marine(point)).resolves.toEqual(marineBody);
 
-    expect(clients.marine.get).toHaveBeenCalledWith({ latitude: 2 });
+    expect(clients.marine.get).toHaveBeenCalledWith({
+      latitude: 41.4,
+      longitude: 2.18,
+      timezone: 'Europe/Madrid',
+      forecast_days: 8,
+      timeformat: 'unixtime',
+      cell_selection: 'sea',
+      hourly: 'wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period',
+    });
     expect(clients.forecast.get).not.toHaveBeenCalled();
   });
 
@@ -139,7 +158,7 @@ describe('OpenMeteoService', () => {
     const failure = new Error('down');
     clients.forecast.get.mockRejectedValue(failure);
 
-    await expect(service.forecast({})).rejects.toBe(failure);
+    await expect(service.forecast(point)).rejects.toBe(failure);
   });
 
   describe('malformed responses are reported as unavailable', () => {
@@ -147,7 +166,7 @@ describe('OpenMeteoService', () => {
       const { clients, service } = createService();
       clients.forecast.get.mockResolvedValue({ ...forecastBody, hourly: undefined });
 
-      await expect(service.forecast({})).rejects.toBeInstanceOf(OpenMeteoUnavailableError);
+      await expect(service.forecast(point)).rejects.toBeInstanceOf(OpenMeteoUnavailableError);
     });
 
     it('forecast with hourly arrays of different lengths', async () => {
@@ -157,7 +176,7 @@ describe('OpenMeteoService', () => {
         hourly: { ...forecastBody.hourly, rain: [1] },
       });
 
-      await expect(service.forecast({})).rejects.toBeInstanceOf(OpenMeteoUnavailableError);
+      await expect(service.forecast(point)).rejects.toBeInstanceOf(OpenMeteoUnavailableError);
     });
 
     it('forecast with wrong value types', async () => {
@@ -167,7 +186,7 @@ describe('OpenMeteoService', () => {
         hourly: { ...forecastBody.hourly, temperature_2m: ['warm', 1] },
       });
 
-      await expect(service.forecast({})).rejects.toBeInstanceOf(OpenMeteoUnavailableError);
+      await expect(service.forecast(point)).rejects.toBeInstanceOf(OpenMeteoUnavailableError);
     });
 
     it('marine with an empty time axis', async () => {
@@ -185,7 +204,7 @@ describe('OpenMeteoService', () => {
         },
       });
 
-      await expect(service.marine({})).rejects.toBeInstanceOf(OpenMeteoUnavailableError);
+      await expect(service.marine(point)).rejects.toBeInstanceOf(OpenMeteoUnavailableError);
     });
 
     it('geocoding results missing required fields', async () => {

@@ -1,0 +1,26 @@
+{
+  "results": [
+    {
+      "id": 3080165,
+      "name": "Zakopane",
+      "latitude": 49.29899,
+      "longitude": 19.94885,
+      "elevation": 838,
+      "feature_code": "PPLA3",
+      "country_code": "PL",
+      "admin1_id": 3337492,
+      "timezone": "Europe/Warsaw",
+      "population": 27266,
+      "country_id": 798544,
+      "country": "Poland",
+      "admin1": "Lesser Poland"
+    },
+    {
+      "id": 7531875,
+      "name": "Zakopane",
+      "latitude": 49.3,
+      "longitude": 19.95
+    }
+  ],
+  "generationtime_ms": 0.6
+}

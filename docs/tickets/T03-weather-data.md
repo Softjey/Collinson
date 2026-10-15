@@ -22,10 +22,13 @@ Touches only `src/weather/` and `test/fixtures/weather/`. No import from `search
 ### 1. Forecast and marine clients
 
 - Built on `OpenMeteoService` from T01.
-- Forecast request: the 10 hourly variables of spec section 4, `forecast_days=8`, the time zone passed in,
-  `timeformat=unixtime`.
-- Marine request: the 5 hourly variables, `forecast_days=8`, the same time zone, `timeformat=unixtime`,
-  `cell_selection=sea`.
+- `OpenMeteoService` owns the wire format: from a point (`latitude`, `longitude`, `timezone`) it builds the forecast
+  request (the 10 hourly variables of spec section 4, `forecast_days=8`, `timeformat=unixtime`) and the marine
+  request (the 5 hourly variables, `forecast_days=8`, `timeformat=unixtime`, `cell_selection=sea`). The hourly
+  variable lists are typed tuples in the response schemas, and the same list builds the schema, so request and
+  response cannot drift apart.
+- `ForecastClient` and `MarineClient` turn a `LocationRef` into a point (hundredths of a degree to degrees) and
+  return the validated response.
 - The zod schemas of both responses live in `shared/open-meteo/schemas` and are applied by `OpenMeteoService`.
   `mappers/` (used only by `WeatherService`) turns a validated response into domain rows with UTC instants and nulls preserved, and a database row
   into a stored snapshot.
@@ -52,7 +55,7 @@ Touches only `src/weather/` and `test/fixtures/weather/`. No import from `search
 
 Unit, clients (recorded response fixtures, fake HTTP client):
 
-- Request parameters are exactly as specified for forecast and for marine.
+- The clients pass the point in degrees and the time zone to `OpenMeteoService`; its spec checks that the requests carry exactly the specified parameters for forecast and for marine.
 - 192 hours map to rows with the right UTC instants; nulls stay null.
 - Marine all-null maps to `hasSea = false` with no hours; marine with data maps to `hasSea = true`.
 - Malformed responses are rejected: missing `hourly`, arrays of different lengths, wrong value types.
