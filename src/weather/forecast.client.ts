@@ -19,10 +19,10 @@ const HOURLY_VARIABLES = [
 
 @Injectable()
 export class ForecastClient {
-  constructor(private readonly openMeteo: OpenMeteoService) {}
+  constructor(private readonly openMeteoService: OpenMeteoService) {}
 
   fetch(location: Pick<LocationRef, 'latE2' | 'lonE2' | 'timezone'>): Promise<ForecastResponse> {
-    return this.openMeteo.forecast({
+    return this.openMeteoService.forecast({
       latitude: fromE2(location.latE2),
       longitude: fromE2(location.lonE2),
       forecast_days: 8,

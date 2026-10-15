@@ -8,10 +8,10 @@ export type MarineSnapshotRow = Prisma.MarineSnapshotGetPayload<{ include: { hou
 
 @Injectable()
 export class MarineRepository {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaClient) {}
+  constructor(@Inject(PrismaService) private readonly prismaService: PrismaClient) {}
 
   async insert(locationId: number, data: MarineData, fetchedAt: Date): Promise<{ id: number }> {
-    const created = await this.prisma.marineSnapshot.create({
+    const created = await this.prismaService.marineSnapshot.create({
       data: {
         locationId,
         fetchedAt,
@@ -27,7 +27,7 @@ export class MarineRepository {
   }
 
   async findLatest(locationId: number): Promise<MarineSnapshotRow | null> {
-    return this.prisma.marineSnapshot.findFirst({
+    return this.prismaService.marineSnapshot.findFirst({
       where: { locationId },
       orderBy: [{ fetchedAt: 'desc' }, { id: 'desc' }],
       include: { hours: { orderBy: { timeUtc: 'asc' } } },

@@ -8,12 +8,12 @@ export type ForecastSnapshotRow = Prisma.ForecastSnapshotGetPayload<{ include: {
 
 @Injectable()
 export class ForecastRepository {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaClient) {}
+  constructor(@Inject(PrismaService) private readonly prismaService: PrismaClient) {}
 
   async insert(locationId: number, data: ForecastData, fetchedAt: Date): Promise<{ id: number }> {
     const { hours, ...snapshot } = data;
-    const [created] = await this.prisma.$transaction([
-      this.prisma.forecastSnapshot.create({
+    const [created] = await this.prismaService.$transaction([
+      this.prismaService.forecastSnapshot.create({
         data: {
           locationId,
           fetchedAt,
@@ -29,7 +29,7 @@ export class ForecastRepository {
       ...(snapshot.elevationM === null
         ? []
         : [
-            this.prisma.location.update({
+            this.prismaService.location.update({
               where: { id: locationId },
               data: { elevationM: snapshot.elevationM },
               select: { id: true },
@@ -40,7 +40,7 @@ export class ForecastRepository {
   }
 
   async findLatest(locationId: number): Promise<ForecastSnapshotRow | null> {
-    return this.prisma.forecastSnapshot.findFirst({
+    return this.prismaService.forecastSnapshot.findFirst({
       where: { locationId },
       orderBy: [{ fetchedAt: 'desc' }, { id: 'desc' }],
       include: { hours: { orderBy: { timeUtc: 'asc' } } },

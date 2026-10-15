@@ -6,11 +6,11 @@ import type { LocationRef } from '../entities/weather.types.js';
 
 @Injectable()
 export class LocationRepository {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaClient) {}
+  constructor(@Inject(PrismaService) private readonly prismaService: PrismaClient) {}
 
   async findOrCreate(input: Omit<LocationRef, 'id'>): Promise<LocationRef> {
     const { latE2, lonE2, timezone } = input;
-    const [row] = await this.prisma.$queryRawTyped(findOrCreateLocation(latE2, lonE2, timezone));
+    const [row] = await this.prismaService.$queryRawTyped(findOrCreateLocation(latE2, lonE2, timezone));
     if (!row) {
       throw new Error('Location upsert returned no row');
     }
@@ -18,6 +18,6 @@ export class LocationRepository {
   }
 
   async updateElevation(locationId: number, elevationM: number): Promise<void> {
-    await this.prisma.location.update({ where: { id: locationId }, data: { elevationM } });
+    await this.prismaService.location.update({ where: { id: locationId }, data: { elevationM } });
   }
 }
