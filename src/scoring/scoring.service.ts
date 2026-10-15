@@ -12,10 +12,10 @@ export interface ActivityOutcome {
 
 @Injectable()
 export class ScoringService {
-  constructor(private readonly mapper: FeatureValuesMapper) {}
+  constructor(private readonly featureValuesMapper: FeatureValuesMapper) {}
 
   score(activities: readonly Activity[], day: DayContext): ActivityOutcome[] {
-    const features = this.mapper.toFeatureValues(day);
+    const features = this.featureValuesMapper.toFeatureValues(day);
     return activities.map((activity) => ({
       activity,
       outcome: scoreFeatures(findDefinition(activity), features),
