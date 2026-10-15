@@ -1,5 +1,5 @@
 import { ArrayNotEmpty, IsArray, IsIn, IsNumber, IsString, Max, Min } from 'class-validator';
-import { ACTIVITIES, type Activity } from '../../scoring/activity.js';
+import { ACTIVITIES, type Activity } from '../../scoring/entities/activity.js';
 
 export class ActivityScoresInput {
   @IsNumber()

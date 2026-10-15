@@ -281,14 +281,18 @@ unavailable).
 ### 8.2 Skiing
 
 Source: Skiing Utility Index, Kapetanakis et al., 2022, Atmosphere 13(10):1569, based on a survey of 111 skiers
-at one Greek resort. The utility functions were read from the paper PDF.
+at one Greek resort. The utility functions were read from the paper PDF. In code each one is a piecewise linear
+curve through points taken from the paper's curve, flat outside them, instead of the paper's polynomials and
+extreme value function.
 
 - Unscored (`NO_SNOW`) when `snowDepthMax = 0` and `snowfallSum = 0`.
-- `uSnow = clamp((98.05 + 6.39 S - 9.03 S^2 + 0.81 S^3) / 100)` with `S = snowHours`, and 0 when `S > 5`.
-- `uWind = clamp((104.37 - 6.78 w - 0.19 w^2 + 0.01 w^3) / 104.37)` with `w = windMean / 3.6` (m/s).
-- `uTemp = f(tMax) / max(f)` where `f(x) = (1/s) * g^(1/c - 1) * exp(-g^(1/c))`, `g = 1 - c (x - loc) / s`,
-  `c = 0.34`, `loc = 1.45`, `s = 4.6`, and `f = 0` when `g <= 0`. The peak is near 3 C, the function is zero
-  below about -12 C and above about 15 C.
+
+| Factor | Variable | Points (value to utility) | Paper's curve |
+|---|---|---|---|
+| Snowfall | `snowHours` | 0 to 0.98, 1 to 0.96, 2 to 0.81, 3 to 0.58, 4 to 0.31, 5 to 0.06, 6 to 0 | `(98.05 + 6.39 S - 9.03 S^2 + 0.81 S^3) / 100`, 0 above 5 h |
+| Wind | `windMean / 3.6` (m/s) | 0 to 1, 5 to 0.64, 10 to 0.26, 14 to 0 | `(104.37 - 6.78 w - 0.19 w^2 + 0.01 w^3) / 104.37` |
+| Temperature | `tMax` (C) | -12 to 0, -8 to 0.06, -5 to 0.23, -2 to 0.56, 0 to 0.8, 1.5 to 0.94, 3 to 1, 5 to 0.94, 7 to 0.74, 10 to 0.35, 13 to 0.06, 15 to 0 | generalised extreme value density (shape 0.34, location 1.45, scale 4.6) divided by its peak |
+
 - `uCloud = clamp((100 - cloud) / 75)`, so 1 at 25% or less.
 - `SUI = 0.303 uSnow + 0.279 uWind + 0.222 uTemp + 0.194 uCloud`.
 - `score = SUI * clamp(1 - rain / 3) * min(1, snowDepthMax / 0.3)`.
@@ -411,7 +415,7 @@ are needed for the London case: a dry, cool storm where the index stays high bec
 
 | Place and date | What happened | Skiing before | Skiing after |
 |---|---|---|---|
-| Beaver Creek 2022-12-02 | World Cup downhill cancelled, wind and snow | 0.46 | 0.46 |
+| Beaver Creek 2022-12-02 | World Cup downhill cancelled, wind and snow | 0.47 | 0.45 |
 | Beaver Creek 2023-12-01 | cancelled, second day | 0.36 | 0.13 |
 | Beaver Creek 2023-12-02 | cancelled, snowfall and heavy wind | 0.28 | 0.14 |
 
