@@ -29,23 +29,12 @@ function clientReturning(response: unknown) {
 const location = { latE2: 4140, lonE2: 218, timezone: 'Europe/Madrid' };
 
 describe('ForecastClient', () => {
-  it('requests the 10 hourly variables for 8 days with unix time', async () => {
+  it('requests the point with its coordinates in degrees and its time zone', async () => {
     const { client, calls } = clientReturning(fixture());
 
     await client.fetch(location);
 
-    expect(calls).toEqual([
-      {
-        latitude: 41.4,
-        longitude: 2.18,
-        forecast_days: 8,
-        timezone: 'Europe/Madrid',
-        timeformat: 'unixtime',
-        hourly:
-          'temperature_2m,relative_humidity_2m,precipitation,rain,snowfall,snow_depth,cloud_cover,' +
-          'wind_speed_10m,wind_gusts_10m,weather_code',
-      },
-    ]);
+    expect(calls).toEqual([{ latitude: 41.4, longitude: 2.18, timezone: 'Europe/Madrid' }]);
   });
 
   describe('HTTP client errors', () => {

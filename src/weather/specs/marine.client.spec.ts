@@ -27,22 +27,12 @@ function clientReturning(response: unknown) {
 const location = { latE2: 4138, lonE2: 221, timezone: 'Europe/Madrid' };
 
 describe('MarineClient', () => {
-  it('requests the 5 hourly variables for 8 days, nearest sea cell, unix time', async () => {
+  it('requests the point with its coordinates in degrees and its time zone', async () => {
     const { client, calls } = clientReturning(fixture('marine-barcelona'));
 
     await client.fetch(location);
 
-    expect(calls).toEqual([
-      {
-        latitude: 41.38,
-        longitude: 2.21,
-        forecast_days: 8,
-        timezone: 'Europe/Madrid',
-        timeformat: 'unixtime',
-        cell_selection: 'sea',
-        hourly: 'wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period',
-      },
-    ]);
+    expect(calls).toEqual([{ latitude: 41.38, longitude: 2.21, timezone: 'Europe/Madrid' }]);
   });
 
   describe('HTTP client errors', () => {
