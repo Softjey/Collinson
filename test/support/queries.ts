@@ -7,5 +7,21 @@ export const SEARCH_LOCATIONS = `
 
 export const ACTIVITY_SCORES = `
   query ($input: ActivityScoresInput!) {
-    activityScores(input: $input) { location { latitude } }
+    activityScores(input: $input) {
+      location { latitude longitude elevation timezone }
+      activities {
+        __typename
+        ... on ActivityDayScores {
+          activity
+          days {
+            __typename
+            ... on ScoredDay { date score categoryIndex category }
+            ... on UnscoredDay { date reason }
+          }
+          freshness { kind updatedAt stale }
+        }
+        ... on ActivityDataTooOld { activity lastUpdatedAt }
+        ... on ActivityDataUnavailable { activity cause }
+      }
+    }
   }`;

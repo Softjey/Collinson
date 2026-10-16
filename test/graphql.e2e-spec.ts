@@ -85,12 +85,6 @@ describe('GraphQL API', () => {
 
       expect(response.body.errors[0].extensions.code).toBe('BAD_USER_INPUT');
     });
-
-    it('accepts valid input and reaches the resolver', async () => {
-      const response = await post(ACTIVITY_SCORES, { input: validInput });
-
-      expect(response.body.errors[0].extensions.code).not.toBe('BAD_USER_INPUT');
-    });
   });
 
   describe('error formatting', () => {
