@@ -9,6 +9,7 @@ import {
 } from '../shared/open-meteo/open-meteo.errors.js';
 import type { ForecastResponse } from '../shared/open-meteo/schemas/forecast.schema.js';
 import type { MarineResponse } from '../shared/open-meteo/schemas/marine.schema.js';
+import { Metrics } from '../shared/observability/metrics.js';
 import { SingleFlight } from '../shared/single-flight.js';
 import type {
   ForecastData,
@@ -61,6 +62,7 @@ export class WeatherService {
     marineRepository: MarineRepository,
     forecastMapper: ForecastMapper,
     marineMapper: MarineMapper,
+    private readonly metrics: Metrics,
   ) {
     this.forecastSource = {
       name: 'forecast',
@@ -96,6 +98,7 @@ export class WeatherService {
     const latestSnapshot = await this.findLatestSnapshot(source, location);
 
     if (latestSnapshot && this.canReuseSnapshot(source, latestSnapshot, location, coverThrough)) {
+      this.metrics.increment('snapshotReused', { source: source.name });
       return { status: 'ok', data: latestSnapshot.data, fetchedAt: latestSnapshot.fetchedAt, stale: false };
     }
 
@@ -103,7 +106,7 @@ export class WeatherService {
       const freshSnapshot = await this.fetchAndStoreSnapshot(source, location);
       return { status: 'ok', data: freshSnapshot.data, fetchedAt: freshSnapshot.fetchedAt, stale: false };
     } catch (error) {
-      return this.resultAfterFailedFetch(error, latestSnapshot);
+      return this.resultAfterFailedFetch(source, error, latestSnapshot);
     }
   }
 
@@ -135,16 +138,27 @@ export class WeatherService {
     source: WeatherSource<WeatherData, ApiResponse, SnapshotRow>,
     location: LocationRef,
   ): Promise<{ data: WeatherData; fetchedAt: Date }> {
-    return this.singleFlight.run(`${source.name}:${location.id}`, async () => {
-      const apiResponse = await source.client.fetch(location);
-      const data = source.mapper.toData(apiResponse);
-      const fetchedAt = this.clock.now();
-      await source.snapshotRepository.insert(location.id, data, fetchedAt);
-      return { data, fetchedAt };
+    const flightKey = `${source.name}:${location.id}`;
+    if (this.singleFlight.isRunning(flightKey)) {
+      this.metrics.increment('fetchJoined', { source: source.name });
+    }
+    return this.singleFlight.run(flightKey, async () => {
+      try {
+        const apiResponse = await source.client.fetch(location);
+        const data = source.mapper.toData(apiResponse);
+        const fetchedAt = this.clock.now();
+        await source.snapshotRepository.insert(location.id, data, fetchedAt);
+        this.metrics.increment('snapshotRefreshed', { source: source.name });
+        return { data, fetchedAt };
+      } catch (error) {
+        this.metrics.increment('snapshotRefreshFailed', { source: source.name });
+        throw error;
+      }
     });
   }
 
-  private resultAfterFailedFetch<WeatherData>(
+  private resultAfterFailedFetch<WeatherData, ApiResponse, SnapshotRow>(
+    source: WeatherSource<WeatherData, ApiResponse, SnapshotRow>,
     error: unknown,
     latestSnapshot: StoredSnapshot<WeatherData> | null,
   ): SourceResult<WeatherData> {
@@ -160,6 +174,7 @@ export class WeatherService {
     });
 
     if (latestSnapshot && decision === 'stale') {
+      this.metrics.increment('staleResponseServed', { source: source.name });
       return { status: 'ok', data: latestSnapshot.data, fetchedAt: latestSnapshot.fetchedAt, stale: true };
     }
     if (latestSnapshot && decision === 'too_old') {

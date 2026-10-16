@@ -62,4 +62,17 @@ describe('SingleFlight', () => {
     await expect(flights.run('forecast:1', retry)).resolves.toBe('data');
     expect(retry).toHaveBeenCalledTimes(1);
   });
+
+  it('reports a key as running only while its operation is pending', async () => {
+    const flights = new SingleFlight();
+    const gate = deferred<string>();
+
+    const flight = flights.run('forecast:1', () => gate.promise);
+
+    expect(flights.isRunning('forecast:1')).toBe(true);
+    expect(flights.isRunning('forecast:2')).toBe(false);
+    gate.resolve('data');
+    await flight;
+    expect(flights.isRunning('forecast:1')).toBe(false);
+  });
 });

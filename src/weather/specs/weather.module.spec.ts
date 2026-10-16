@@ -3,11 +3,12 @@ import { Test } from '@nestjs/testing';
 import { ConfigModule } from '../../shared/config/config.module.js';
 import { DatabaseModule } from '../../shared/database/database.module.js';
 import { PrismaService } from '../../shared/database/prisma.service.js';
+import { ObservabilityModule } from '../../shared/observability/observability.module.js';
 import { ForecastRepository } from '../repositories/forecast.repository.js';
 import { WeatherModule } from '../weather.module.js';
 import { WeatherService } from '../weather.service.js';
 
-@Module({ imports: [ConfigModule, DatabaseModule, WeatherModule] })
+@Module({ imports: [ConfigModule, DatabaseModule, ObservabilityModule, WeatherModule] })
 class ConsumerModule {}
 
 describe('WeatherModule', () => {

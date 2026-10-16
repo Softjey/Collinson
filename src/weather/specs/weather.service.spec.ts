@@ -17,6 +17,7 @@ import type { ForecastClient } from '../forecast.client.js';
 import type { ForecastRepository } from '../repositories/forecast.repository.js';
 import type { MarineClient } from '../marine.client.js';
 import type { MarineRepository } from '../repositories/marine.repository.js';
+import { InMemoryMetrics } from '../../../test/support/in-memory-metrics.js';
 import { WeatherService } from '../weather.service.js';
 
 const HOUR = 3_600_000;
@@ -71,6 +72,7 @@ function setup(
   const marineSnapshots = snapshotStore<MarineData>(options.marine ? { 1: options.marine } : {});
   const forecastClient = { fetch: jest.fn(options.forecastFetch ?? (async () => freshForecastData)) };
   const marineClient = { fetch: jest.fn(options.marineFetch ?? (async () => seaData)) };
+  const inMemoryMetrics = new InMemoryMetrics();
   const service = new WeatherService(
     clock,
     { weatherRefreshHours: 6, wavesRefreshHours: 24, maxStaleHours: 48 },
@@ -80,8 +82,9 @@ function setup(
     marineSnapshots as unknown as MarineRepository,
     identityMapper as unknown as ForecastMapper,
     identityMapper as unknown as MarineMapper,
+    inMemoryMetrics.metrics,
   );
-  return { service, forecastSnapshots, marineSnapshots, forecastClient, marineClient };
+  return { service, forecastSnapshots, marineSnapshots, forecastClient, marineClient, inMemoryMetrics };
 }
 
 const forecastRow = (hours: number, data = forecastData): StoredSnapshot<ForecastData> => ({
@@ -353,6 +356,104 @@ describe('WeatherService', () => {
         { status: 'unavailable', cause: 'RATE_LIMITED' },
         { status: 'unavailable', cause: 'RATE_LIMITED' },
       ]);
+    });
+  });
+
+  describe('metrics', () => {
+    const unavailable = async () => {
+      throw new OpenMeteoUnavailableError('down');
+    };
+
+    it('counts a reused snapshot under its source and nothing else', async () => {
+      const { service, inMemoryMetrics } = setup({ forecast: forecastRow(2), marine: marineRow(2) });
+
+      await service.getForecast(location, '2026-10-20');
+      await service.getMarine(location, '2026-10-19');
+
+      expect(await inMemoryMetrics.counterValue('snapshotReused', { source: 'forecast' })).toBe(1);
+      expect(await inMemoryMetrics.counterValue('snapshotReused', { source: 'marine' })).toBe(1);
+      expect(await inMemoryMetrics.counterValue('snapshotRefreshed')).toBe(0);
+      expect(await inMemoryMetrics.counterValue('snapshotRefreshFailed')).toBe(0);
+      expect(await inMemoryMetrics.counterValue('staleResponseServed')).toBe(0);
+    });
+
+    it('counts a successful fetch as a refresh and not as a reuse', async () => {
+      const { service, inMemoryMetrics } = setup({ forecast: forecastRow(7) });
+
+      await service.getForecast(location, '2026-10-20');
+      await service.getMarine(location, '2026-10-20');
+
+      expect(await inMemoryMetrics.counterValue('snapshotRefreshed', { source: 'forecast' })).toBe(1);
+      expect(await inMemoryMetrics.counterValue('snapshotRefreshed', { source: 'marine' })).toBe(1);
+      expect(await inMemoryMetrics.counterValue('snapshotReused')).toBe(0);
+    });
+
+    it('counts a failed fetch as a refresh failure and not as a refresh', async () => {
+      const { service, inMemoryMetrics } = setup({ forecastFetch: unavailable });
+
+      await service.getForecast(location, '2026-10-20');
+
+      expect(await inMemoryMetrics.counterValue('snapshotRefreshFailed', { source: 'forecast' })).toBe(1);
+      expect(await inMemoryMetrics.counterValue('snapshotRefreshed')).toBe(0);
+      expect(await inMemoryMetrics.counterValue('staleResponseServed')).toBe(0);
+    });
+
+    it('counts a stale fallback as a refresh failure and a stale response', async () => {
+      const { service, inMemoryMetrics } = setup({ marine: marineRow(30), marineFetch: unavailable });
+
+      await service.getMarine(location, '2026-10-20');
+
+      expect(await inMemoryMetrics.counterValue('snapshotRefreshFailed', { source: 'marine' })).toBe(1);
+      expect(await inMemoryMetrics.counterValue('staleResponseServed', { source: 'marine' })).toBe(1);
+    });
+
+    it('does not count a stale response when the snapshot is too old', async () => {
+      const { service, inMemoryMetrics } = setup({ forecast: forecastRow(49), forecastFetch: unavailable });
+
+      await service.getForecast(location, '2026-10-20');
+
+      expect(await inMemoryMetrics.counterValue('snapshotRefreshFailed', { source: 'forecast' })).toBe(1);
+      expect(await inMemoryMetrics.counterValue('staleResponseServed')).toBe(0);
+    });
+
+    it('counts one fetch and one joined request for two concurrent calls', async () => {
+      const gate = deferred<ForecastData>();
+      const { service, inMemoryMetrics } = setup({ forecastFetch: () => gate.promise });
+
+      const first = service.getForecast(location, '2026-10-20');
+      const second = service.getForecast(location, '2026-10-20');
+      await new Promise((resolve) => setImmediate(resolve));
+      gate.resolve(freshForecastData);
+      await Promise.all([first, second]);
+
+      expect(await inMemoryMetrics.counterValue('snapshotRefreshed', { source: 'forecast' })).toBe(1);
+      expect(await inMemoryMetrics.counterValue('fetchJoined', { source: 'forecast' })).toBe(1);
+    });
+
+    it('counts one refresh failure for two concurrent calls that share a failed fetch', async () => {
+      const gate = deferred<ForecastData>();
+      const { service, inMemoryMetrics } = setup({ forecastFetch: () => gate.promise });
+
+      const first = service.getForecast(location, '2026-10-20');
+      const second = service.getForecast(location, '2026-10-20');
+      await new Promise((resolve) => setImmediate(resolve));
+      gate.reject(new OpenMeteoRateLimitedError());
+      await Promise.all([first, second]);
+
+      expect(await inMemoryMetrics.counterValue('snapshotRefreshFailed', { source: 'forecast' })).toBe(1);
+    });
+
+    it('counts no refresh and no stale response for an unexpected error that propagates', async () => {
+      const { service, inMemoryMetrics } = setup({
+        forecastFetch: async () => {
+          throw new TypeError('bug');
+        },
+      });
+
+      await expect(service.getForecast(location, '2026-10-20')).rejects.toThrow('bug');
+
+      expect(await inMemoryMetrics.counterValue('snapshotRefreshed')).toBe(0);
+      expect(await inMemoryMetrics.counterValue('staleResponseServed')).toBe(0);
     });
   });
 });
