@@ -112,4 +112,4 @@ Surfing:
 
 ## Out of scope
 
-Fetching or storing data, mapping to GraphQL types, any change to the formulas (T08).
+Fetching or storing data, mapping to GraphQL types, any change to the formulas.

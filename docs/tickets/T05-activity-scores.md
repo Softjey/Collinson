@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Depends on | T02, T03 |
-| Unblocks | T06, T08 |
+| Unblocks | T06 |
 | Wave | 3 |
 
 ## Goal
