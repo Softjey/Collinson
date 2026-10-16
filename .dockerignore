@@ -1,0 +1,16 @@
+.git
+.claude
+.vscode
+node_modules
+dist
+src/generated
+ai-sessions
+docs
+test
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+TASK.md
+Dockerfile
+docker-compose.yml

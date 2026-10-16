@@ -104,6 +104,8 @@ src/
     validation/    @Trim, @IsCountryCode, @IsLanguageCode, @NullToUndefined
     graphql/       scalars/ (date, date-time), error-formatter.ts
     clock.ts, clock.module.ts, single-flight.ts, retry.ts
+    observability/ metrics.ts (counter and histogram declarations and the `Metrics` interface), no-op and OpenTelemetry
+                   implementations, telemetry-sdk.ts, logging.module.ts (pino JSON logs)
   <module>/        the root holds only the module, service, resolver and clients;
                    entities/      types owned by the module
                    mappers/       stateless injectable classes with methods that translate between layers (API response to domain,
@@ -123,7 +125,7 @@ src/
                    input and the result types, mappers/ the hourly and result translations, utils/ the
                    combination of source results
   health/          health.controller.ts
-  observability/   tracing.ts, metrics.ts
+  tracing.ts       entry loaded with `node --import` before the application; starts the OpenTelemetry SDK only when OTEL_ENABLED is true
 test/              e2e specs, fixtures/ (static JSON), support/ (everything that exists only for specs)
 ```
 
@@ -244,6 +246,7 @@ not usable -> fetch (single-flight key "<source>:<locationId>", retry per P6)
 | `PLACE_SEARCH_CACHE_DAYS` | 30 |
 | `OTEL_ENABLED` | false |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4318` |
+| `LOG_LEVEL` | info |
 
 ### 3.7 Contract and schema changes
 

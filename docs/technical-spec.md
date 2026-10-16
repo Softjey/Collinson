@@ -493,8 +493,11 @@ weather refresh hours (6), waves refresh hours (24), maximum stale hours (48), p
 
 ### Observability (proposal)
 
-Traces for incoming requests and outgoing Open-Meteo calls; counters for snapshot reuse, refreshes, refresh
-failures and stale responses; structured logs. Started only with a compose profile, so the default
+Traces for incoming HTTP and GraphQL requests and outgoing Open-Meteo calls; counters for snapshot reuse,
+refreshes, refresh failures, stale responses, requests that joined a fetch in flight, Open-Meteo attempts (with a
+duration histogram), place searches and `activityScores` results and unscored days; structured JSON logs that carry
+the trace id when tracing is on. The SDK starts only when `OTEL_ENABLED` is true, loaded with `node --import`
+before the application. Collector and Grafana start only with the compose profile `observability`, so the default
 `docker compose up` runs the application and Postgres.
 
 ### Testing (decided in principle)
