@@ -24,6 +24,50 @@ on demand.
 How the work was done: [DECISIONS.md](DECISIONS.md) (decisions, assumptions, cuts),
 [docs/](docs/) (technical spec, implementation plan, tickets) and [ai-sessions/](ai-sessions/) (the AI sessions).
 
+## Results for a few places
+
+`activityScores` for 16 to 22 October 2026, shown in a throwaway local test page (not part of the submission;
+the service has no front end). Each cell is a day's score and category; the outlined cell is the best activity
+that day.
+
+**Klein Matterhorn (3581 m) and Zermatt (1608 m), 4 km apart.** The glacier has excellent skiing at the start of
+the week until a storm moves in; the town below has no snow, so skiing is unscored there and indoor sightseeing
+wins the stormy days. This is why scores describe the weather grid cell (see Known limitations).
+
+![Klein Matterhorn](docs/img/ui/klein-matterhorn.png)
+
+![Zermatt](docs/img/ui/zermatt.png)
+
+**Hossegor**, an Atlantic surf spot: ideal surfing most of the week, with outdoor sightseeing close behind.
+
+![Hossegor](docs/img/ui/hossegor.png)
+
+**Reykjavik**: a storm on Saturday to Monday takes surfing from good to unsuitable and makes indoor sightseeing
+the pick, before the swell comes back on Tuesday.
+
+![Reykjavik](docs/img/ui/reykjavik.png)
+
+**Cape Town**, southern spring: surfing and outdoor sightseeing trade the lead day by day until the weather
+turns at the end of the week and indoor sightseeing takes over.
+
+![Cape Town](docs/img/ui/cape-town.png)
+
+## Scoring in charts
+
+How each activity turns weather into a score. The formulas and sources are in the
+[technical spec](docs/technical-spec.md), section 8; the charts are drawn by
+[scripts/plot-scoring.py](scripts/plot-scoring.py).
+
+| What it shows | Chart |
+| --- | --- |
+| Skiing: utility curves of the Skiing Utility Index | ![Skiing curves](docs/img/skiing-curves.png) |
+| Surfing: wave height, wave period and wind | ![Surfing curves](docs/img/surfing-curves.png) |
+| Surfing: how height and period combine at three wind speeds | ![Surfing combination](docs/img/surfing-combination.png) |
+| Outdoor sightseeing: HCI:Urban ratings | ![Outdoor ratings](docs/img/outdoor-ratings.png) |
+| Outdoor sightseeing: thermal comfort from temperature and humidity | ![Humidex rating](docs/img/humidex-rating.png) |
+| Outdoor sightseeing: caps for heavy rain and storms | ![Outdoor caps](docs/img/outdoor-caps.png) |
+| Score categories, and indoor sightseeing as the opposite of outdoor | ![Categories and indoor](docs/img/categories-and-indoor.png) |
+
 ## Running
 
 Requires Docker.
