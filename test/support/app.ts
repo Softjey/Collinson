@@ -23,6 +23,7 @@ export async function createTestApp(options: { databaseUrl?: string } = {}): Pro
     ...process.env,
     DATABASE_URL: options.databaseUrl ?? testDatabaseUrl(),
     OTEL_ENABLED: 'false',
+    LOG_LEVEL: 'silent',
   });
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })

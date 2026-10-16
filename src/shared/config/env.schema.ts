@@ -4,6 +4,8 @@ const positiveInt = z.coerce.number().int().positive();
 const nonNegativeInt = z.coerce.number().int().nonnegative();
 const booleanString = z.enum(['true', 'false']).transform((value) => value === 'true');
 
+export const LOG_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'] as const;
+
 const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   DATABASE_URL: z.string().min(1),
@@ -19,6 +21,7 @@ const envSchema = z.object({
   PLACE_SEARCH_CACHE_DAYS: positiveInt.default(30),
   OTEL_ENABLED: booleanString.default(false),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().default('http://localhost:4318'),
+  LOG_LEVEL: z.enum(LOG_LEVELS).default('info'),
 });
 
 export interface AppConfig {
@@ -37,6 +40,7 @@ export interface AppConfig {
   maxStaleHours: number;
   placeSearchCacheDays: number;
   otel: { enabled: boolean; endpoint: string };
+  logLevel: (typeof LOG_LEVELS)[number];
 }
 
 export function parseEnv(env: Record<string, string | undefined>): AppConfig {
@@ -65,5 +69,6 @@ export function parseEnv(env: Record<string, string | undefined>): AppConfig {
     maxStaleHours: e.MAX_STALE_HOURS,
     placeSearchCacheDays: e.PLACE_SEARCH_CACHE_DAYS,
     otel: { enabled: e.OTEL_ENABLED, endpoint: e.OTEL_EXPORTER_OTLP_ENDPOINT },
+    logLevel: e.LOG_LEVEL,
   };
 }

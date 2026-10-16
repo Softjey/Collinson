@@ -20,6 +20,7 @@ describe('parseEnv', () => {
       maxStaleHours: 48,
       placeSearchCacheDays: 30,
       otel: { enabled: false, endpoint: 'http://localhost:4318' },
+      logLevel: 'info',
     });
   });
 
@@ -56,6 +57,14 @@ describe('parseEnv', () => {
   it('parses the OpenTelemetry flag', () => {
     expect(parseEnv({ ...minimal, OTEL_ENABLED: 'true' }).otel.enabled).toBe(true);
     expect(parseEnv({ ...minimal, OTEL_ENABLED: 'false' }).otel.enabled).toBe(false);
+  });
+
+  it('reads the log level', () => {
+    expect(parseEnv({ ...minimal, LOG_LEVEL: 'silent' }).logLevel).toBe('silent');
+  });
+
+  it('fails when LOG_LEVEL is not a log level', () => {
+    expect(() => parseEnv({ ...minimal, LOG_LEVEL: 'loud' })).toThrow(/LOG_LEVEL/);
   });
 
   it('fails when DATABASE_URL is missing', () => {
