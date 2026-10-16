@@ -18,6 +18,12 @@ Formulas, tables, data and the full design are in [docs/technical-spec.md](docs/
 - **Impossible is not low.** Surfing without sea and skiing on a day without snow or snowfall are reported as
   unscored days, never as a low number. Outdoor and indoor sightseeing are always scored.
 - **Any coordinates are supported.** "Regional" is about expected audience and load, not a restriction.
+- **A score describes the weather model's grid cell, not a resort or a beach.** Weather is taken for the cell at
+  its own elevation, so a mountain town in a valley (Zermatt, 1608 m) can have no snow while the slopes above it
+  (Klein Matterhorn, 3747 m) have good skiing. Waves are taken from the nearest sea cell, which can be 5 to 10 km
+  from the requested point, not from a specific beach. The client passes the coordinates of the slope or the
+  beach, and `ScoredLocation.elevation` shows the elevation the score was calculated for. Nothing in the API
+  corrects for this.
 
 ## Scoring
 
