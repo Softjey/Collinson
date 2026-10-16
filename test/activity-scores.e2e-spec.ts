@@ -306,6 +306,45 @@ describe('activityScores', () => {
     expect(days.every((day: { __typename: string }) => day.__typename === 'ScoredDay')).toBe(true);
   });
 
+  describe('metrics', () => {
+    const resultCount = (status: string, activity?: string) =>
+      testApp.inMemoryMetrics.counterValue('activityResult', { status, ...(activity && { activity }) });
+
+    it('counts each activity result by its kind', async () => {
+      testApp.openMeteo.respond('forecast', barcelonaForecast);
+      failWith('marine', new OpenMeteoUnavailableError('down'));
+      const before = { scored: await resultCount('scored'), unavailable: await resultCount('unavailable') };
+
+      await scores({ activities: ['SKIING', 'SURFING', 'INDOOR_SIGHTSEEING'] });
+
+      expect((await resultCount('scored')) - before.scored).toBe(2);
+      expect((await resultCount('unavailable')) - before.unavailable).toBe(1);
+      expect(await resultCount('unavailable', 'SURFING')).toBeGreaterThanOrEqual(1);
+    });
+
+    it('counts unscored days by activity and reason', async () => {
+      testApp.openMeteo.respond('forecast', barcelonaForecast).respond('marine', inlandMarine);
+      const unscoredNoSea = () =>
+        testApp.inMemoryMetrics.counterValue('unscoredDay', { activity: 'SURFING', reason: 'NO_SEA' });
+      const before = await unscoredNoSea();
+
+      await scores({ ...MADRID, activities: ['SURFING'] });
+
+      expect((await unscoredNoSea()) - before).toBe(8);
+    });
+
+    it('counts no unscored day for an activity whose days are all scored', async () => {
+      scriptCoast();
+      const unscoredIndoor = () =>
+        testApp.inMemoryMetrics.counterValue('unscoredDay', { activity: 'INDOOR_SIGHTSEEING' });
+      const before = await unscoredIndoor();
+
+      await scores({ activities: ['INDOOR_SIGHTSEEING'] });
+
+      expect(await unscoredIndoor()).toBe(before);
+    });
+  });
+
   describe('validation', () => {
     it.each([
       ['fromDate after toDate', { fromDate: '2026-10-15', toDate: '2026-10-14' }],

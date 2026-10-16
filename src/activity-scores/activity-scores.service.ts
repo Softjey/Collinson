@@ -8,6 +8,7 @@ import type {
 } from '../scoring/entities/day-features.js';
 import { LocationService } from '../location/location.service.js';
 import { ScoringService } from '../scoring/scoring.service.js';
+import { Metrics } from '../shared/observability/metrics.js';
 import { datesBetween, type LocalDate } from '../shared/local-date.js';
 import type {
   ForecastData,
@@ -28,6 +29,12 @@ interface LoadedSources {
   marine: SourceResult<MarineData> | null;
 }
 
+const RESULT_STATUS_BY_TYPE = {
+  ActivityDayScores: 'scored',
+  ActivityDataTooOld: 'too_old',
+  ActivityDataUnavailable: 'unavailable',
+} as const satisfies Record<ActivityScoresResult['__typename'], string>;
+
 type OkSourceResult = Extract<SourceResult<unknown>, { status: 'ok' }>;
 
 @Injectable()
@@ -40,6 +47,7 @@ export class ActivityScoresService {
     private readonly sourceResultCombiner: SourceResultCombiner,
     private readonly hourlyDataMapper: HourlyDataMapper,
     private readonly resultMapper: ResultMapper,
+    private readonly metrics: Metrics,
   ) {}
 
   async scoreActivities(input: ActivityScoresInput): Promise<ActivityScores> {
@@ -50,15 +58,31 @@ export class ActivityScoresService {
     const loadedSources = await this.loadSources(input, location);
     const daysByActivity = this.scoreDays(input, loadedSources, location.timezone);
 
+    const activities = input.activities.map((activity) =>
+      this.resultFor(activity, loadedSources, daysByActivity.get(activity) ?? []),
+    );
+    activities.forEach((result) => this.recordMetrics(result));
+
     return {
       location: this.resultMapper.toLocation(
         { latitude, longitude, timezone: location.timezone },
         await this.locationService.getElevation(location),
       ),
-      activities: input.activities.map((activity) =>
-        this.resultFor(activity, loadedSources, daysByActivity.get(activity) ?? []),
-      ),
+      activities,
     };
+  }
+
+  private recordMetrics(result: ActivityScoresResult): void {
+    const { activity } = result;
+    this.metrics.increment('activityResult', { activity, status: RESULT_STATUS_BY_TYPE[result.__typename] });
+    if (result.__typename !== 'ActivityDayScores') {
+      return;
+    }
+    for (const day of result.days) {
+      if (day.__typename === 'UnscoredDay') {
+        this.metrics.increment('unscoredDay', { activity, reason: day.reason });
+      }
+    }
   }
 
   private async loadSources(input: ActivityScoresInput, location: LocationRef): Promise<LoadedSources> {
