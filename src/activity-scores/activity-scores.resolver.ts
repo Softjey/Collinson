@@ -1,5 +1,5 @@
 import { Args, Query, Resolver } from '@nestjs/graphql';
-import { ActivityScoresInput } from './dto/activity-scores.input.js';
+import { ActivityScoresInput } from './entities/activity-scores.input.js';
 
 @Resolver()
 export class ActivityScoresResolver {
