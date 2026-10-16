@@ -40,7 +40,7 @@ Formulas, tables, data and the full design are in [docs/technical-spec.md](docs/
   precipitation and at 0.2 from 60 km/h maximum wind or 25 mm; skiing is multiplied by
   `min(1, snow depth / 0.3 m)` and by `(1 - rain / 3 mm)`. Why: plain HCI scored Storm Eunice in London at 0.63
   even though attractions were closed, and skiing scored early season days as high as mid-winter ones.
-- **Known limits, refinement postponed to the end:** no wind direction for surfing, skiing in the off-season is
+- **Known limits:** no wind direction for surfing, skiing in the off-season is
   not always unscored, caps were derived from the same events they were checked on.
 
 ## Data and storage
@@ -87,8 +87,7 @@ Formulas, tables, data and the full design are in [docs/technical-spec.md](docs/
   code and for fewer abstractions.
 - **The time zone is determined offline from the coordinates** with `@photostructure/tz-lookup`.
 - **TypeScript, NestJS, GraphQL, class-validator, zod** for upstream responses, **Prisma** with PostgreSQL.
-- **Schema-first GraphQL.** The contract is kept in its own folder as the fixed contract for communication; the
-  file in `docs/` is a draft.
+- **Schema-first GraphQL.** The contract is kept in its own folder as the fixed contract for communication.
 - **e2e tests get PostgreSQL from Testcontainers.**
 - **Modules are isolated.** A module exports only its service, and only when another module needs it. Validation of
   an Open-Meteo response is the job of the open-meteo module, not of the modules that use it.
@@ -107,6 +106,10 @@ Formulas, tables, data and the full design are in [docs/technical-spec.md](docs/
   as classes, with descriptive feature names that include units.
 - **Health reports only our own service.** Observability with OpenTelemetry and grafana/otel-lgtm behind a
   flag. Dockerfiles and one docker compose.
+- **Logs are JSON, written with nestjs-pino**, with a `LOG_LEVEL` setting.
+- **Tracing is started with `node --import`** before the application, only when `OTEL_ENABLED` is true.
+- **Metrics** count snapshot reuse, refreshes and refresh failures, stale responses, requests that joined a fetch
+  in flight, Open-Meteo requests and their duration, place searches, activity results and unscored days.
 - **Tests:** unit tests for everything, e2e with the NestJS tools and a mocked Open-Meteo.
 
 ## Assumptions to check with the team
