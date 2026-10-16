@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { metrics } from '@opentelemetry/api';
 import { APP_CONFIG } from '../config/config.module.js';
 import type { AppConfig } from '../config/env.schema.js';
+import { GraphQLTracingPlugin } from '../graphql/graphql-tracing.plugin.js';
 import { Metrics } from './metrics.js';
 import { NoopMetrics } from './noop-metrics.js';
 import { OpenTelemetryMetrics } from './open-telemetry-metrics.js';
@@ -11,6 +12,7 @@ export const METER_NAME = 'weather-activity-ranker';
 @Global()
 @Module({
   providers: [
+    GraphQLTracingPlugin,
     {
       provide: Metrics,
       inject: [APP_CONFIG],
