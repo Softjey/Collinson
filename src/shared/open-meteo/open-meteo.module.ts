@@ -2,7 +2,8 @@ import { HttpModule, HttpService } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { APP_CONFIG } from '../config/config.module.js';
 import type { AppConfig } from '../config/env.schema.js';
-import { OpenMeteoHttpClient } from './open-meteo-http.client.js';
+import { Metrics } from '../observability/metrics.js';
+import { OpenMeteoHttpClient, type OpenMeteoSource } from './open-meteo-http.client.js';
 import { OpenMeteoService } from './open-meteo.service.js';
 
 @Module({
@@ -15,14 +16,20 @@ import { OpenMeteoService } from './open-meteo.service.js';
   providers: [
     {
       provide: OpenMeteoService,
-      inject: [HttpService, APP_CONFIG],
-      useFactory: (http: HttpService, { openMeteo }: AppConfig) => {
-        const client = (baseUrl: string) =>
-          new OpenMeteoHttpClient(http, { baseUrl, retries: openMeteo.retries, apiKey: openMeteo.apiKey });
+      inject: [HttpService, APP_CONFIG, Metrics],
+      useFactory: (http: HttpService, { openMeteo }: AppConfig, metrics: Metrics) => {
+        const client = (source: OpenMeteoSource, baseUrl: string) =>
+          new OpenMeteoHttpClient(http, {
+            source,
+            baseUrl,
+            retries: openMeteo.retries,
+            apiKey: openMeteo.apiKey,
+            metrics,
+          });
         return new OpenMeteoService({
-          forecast: client(openMeteo.forecastUrl),
-          marine: client(openMeteo.marineUrl),
-          geocoding: client(openMeteo.geocodingUrl),
+          forecast: client('forecast', openMeteo.forecastUrl),
+          marine: client('marine', openMeteo.marineUrl),
+          geocoding: client('geocoding', openMeteo.geocodingUrl),
         });
       },
     },

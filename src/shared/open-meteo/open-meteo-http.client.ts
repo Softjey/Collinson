@@ -1,6 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import type { AxiosResponse } from 'axios';
 import { firstValueFrom } from 'rxjs';
+import { Metrics } from '../observability/metrics.js';
 import { retry } from '../retry.js';
 import {
   OpenMeteoBadRequestError,
@@ -10,10 +11,20 @@ import {
 
 export type QueryParams = Record<string, string | number | boolean | undefined>;
 
+export type OpenMeteoSource = 'forecast' | 'marine' | 'geocoding';
+
+const OUTCOMES_BY_ERROR = [
+  [OpenMeteoRateLimitedError, 'rate_limited'],
+  [OpenMeteoBadRequestError, 'bad_request'],
+  [OpenMeteoUnavailableError, 'unavailable'],
+] as const;
+
 export interface OpenMeteoHttpOptions {
+  source: OpenMeteoSource;
   baseUrl: string;
   retries: number;
   apiKey: string | undefined;
+  metrics: Metrics;
 }
 
 export class OpenMeteoHttpClient {
@@ -30,8 +41,22 @@ export class OpenMeteoHttpClient {
   }
 
   private async request(params: QueryParams): Promise<unknown> {
-    const response = await this.send(params);
-    return bodyOrThrow(response);
+    const startedAt = performance.now();
+    let outcome = 'ok';
+    try {
+      return bodyOrThrow(await this.send(params));
+    } catch (error) {
+      outcome = outcomeOf(error);
+      throw error;
+    } finally {
+      const labels = { source: this.openMeteoHttpOptions.source };
+      this.openMeteoHttpOptions.metrics.increment('openMeteoRequest', { ...labels, outcome });
+      this.openMeteoHttpOptions.metrics.observe(
+        'openMeteoRequestDurationMs',
+        performance.now() - startedAt,
+        labels,
+      );
+    }
   }
 
   private async send(params: QueryParams): Promise<AxiosResponse> {
@@ -46,6 +71,10 @@ export class OpenMeteoHttpClient {
       throw new OpenMeteoUnavailableError('Open-Meteo request failed', { cause });
     }
   }
+}
+
+function outcomeOf(error: unknown): string {
+  return OUTCOMES_BY_ERROR.find(([errorType]) => error instanceof errorType)?.[1] ?? 'unavailable';
 }
 
 function bodyOrThrow({ status, data }: AxiosResponse): unknown {

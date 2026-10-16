@@ -6,6 +6,7 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios';
+import { InMemoryMetrics } from '../../../../test/support/in-memory-metrics.js';
 import { OpenMeteoHttpClient } from '../open-meteo-http.client.js';
 import {
   OpenMeteoBadRequestError,
@@ -23,12 +24,17 @@ function reply(status: number, data: unknown) {
   });
 }
 
-function createClient(adapter: AxiosAdapter, options: { retries?: number; apiKey?: string } = {}) {
+function createClient(
+  adapter: AxiosAdapter,
+  options: { retries?: number; apiKey?: string; inMemoryMetrics?: InMemoryMetrics } = {},
+) {
   const http = new HttpService(axios.create({ adapter, timeout: 1000 }));
   return new OpenMeteoHttpClient(http, {
+    source: 'forecast',
     baseUrl: 'https://open-meteo.test/v1',
     retries: options.retries ?? 1,
     apiKey: options.apiKey,
+    metrics: (options.inMemoryMetrics ?? new InMemoryMetrics()).metrics,
   });
 }
 
@@ -170,6 +176,64 @@ describe('OpenMeteoHttpClient', () => {
       await createClient(adapter, { apiKey: 'secret' }).get({ latitude: 1 });
 
       expect(queryOf(adapter).apikey).toBe('secret');
+    });
+  });
+
+  describe('metrics', () => {
+    it('counts a successful attempt and records its duration under the source', async () => {
+      const inMemoryMetrics = new InMemoryMetrics();
+
+      await createClient(jest.fn<AxiosAdapter>(reply(200, {})), { inMemoryMetrics }).get({});
+
+      expect(
+        await inMemoryMetrics.counterValue('openMeteoRequest', { source: 'forecast', outcome: 'ok' }),
+      ).toBe(1);
+      expect(await inMemoryMetrics.histogramCount('openMeteoRequestDurationMs', { source: 'forecast' })).toBe(
+        1,
+      );
+    });
+
+    it('counts every attempt of a retried request, the failed one and the successful one', async () => {
+      const inMemoryMetrics = new InMemoryMetrics();
+      const adapter = jest
+        .fn<AxiosAdapter>()
+        .mockImplementationOnce(reply(503, {}))
+        .mockImplementationOnce(reply(200, {}));
+
+      await createClient(adapter, { inMemoryMetrics }).get({});
+
+      expect(await inMemoryMetrics.counterValue('openMeteoRequest', { outcome: 'unavailable' })).toBe(1);
+      expect(await inMemoryMetrics.counterValue('openMeteoRequest', { outcome: 'ok' })).toBe(1);
+      expect(await inMemoryMetrics.histogramCount('openMeteoRequestDurationMs')).toBe(2);
+    });
+
+    it.each([
+      ['a 429', reply(429, {}), 'rate_limited'],
+      ['a 400', reply(400, {}), 'bad_request'],
+      ['a 500', reply(500, {}), 'unavailable'],
+      ['a body that is not JSON', reply(200, '<html>'), 'unavailable'],
+    ])('labels %s as %s', async (_name, adapterReply, outcome) => {
+      const inMemoryMetrics = new InMemoryMetrics();
+
+      await createClient(jest.fn<AxiosAdapter>(adapterReply), { inMemoryMetrics, retries: 0 })
+        .get({})
+        .catch(() => undefined);
+
+      expect(await inMemoryMetrics.counterValue('openMeteoRequest', { outcome })).toBe(1);
+      expect(await inMemoryMetrics.counterValue('openMeteoRequest', { outcome: 'ok' })).toBe(0);
+    });
+
+    it('labels a network error as unavailable', async () => {
+      const inMemoryMetrics = new InMemoryMetrics();
+
+      await createClient(jest.fn<AxiosAdapter>().mockRejectedValue(networkError()), {
+        inMemoryMetrics,
+        retries: 0,
+      })
+        .get({})
+        .catch(() => undefined);
+
+      expect(await inMemoryMetrics.counterValue('openMeteoRequest', { outcome: 'unavailable' })).toBe(1);
     });
   });
 });
