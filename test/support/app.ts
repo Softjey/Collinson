@@ -16,13 +16,15 @@ export interface TestApp {
   inMemoryMetrics: InMemoryMetrics;
 }
 
-export async function createTestApp(options: { databaseUrl?: string } = {}): Promise<TestApp> {
+export async function createTestApp(
+  options: { databaseUrl?: string; otelEnabled?: boolean } = {},
+): Promise<TestApp> {
   const openMeteo = new FakeOpenMeteo();
   const inMemoryMetrics = new InMemoryMetrics();
   const config = parseEnv({
     ...process.env,
     DATABASE_URL: options.databaseUrl ?? testDatabaseUrl(),
-    OTEL_ENABLED: 'false',
+    OTEL_ENABLED: String(options.otelEnabled ?? false),
     LOG_LEVEL: 'silent',
   });
 
