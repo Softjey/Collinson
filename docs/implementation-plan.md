@@ -119,7 +119,9 @@ src/
                    features), activities/ the scorers, the catalogue and the four declared activities, mappers/
                    the hourly-to-daily and day-to-feature-record translations, utils/ the maths and score scale
   activity-scores/ activity-scores.module.ts, activity-scores.resolver.ts, activity-scores.service.ts,
-                   date-range.validator.ts, time-zone.service.ts, mappers/
+                   union-type.resolvers.ts, date-range.validator.ts, time-zone.service.ts; entities/ holds the
+                   input and the result types, mappers/ the hourly and result translations, utils/ the
+                   combination of source results
   health/          health.controller.ts
   observability/   tracing.ts, metrics.ts
 test/              e2e specs, fixtures/ (static JSON), support/ (everything that exists only for specs)
