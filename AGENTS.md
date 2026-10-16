@@ -4,7 +4,7 @@ Guidance for AI coding agents working in this repository.
 
 ## Project
 
-Backend service (Node.js + GraphQL) that ranks the next 7 days for skiing, surfing, outdoor sightseeing and indoor sightseeing in a given city, using persisted Open-Meteo data. See [TASK.md](TASK.md) for the brief.
+Backend service (Node.js + GraphQL) that ranks the next 7 days for skiing, surfing, outdoor sightseeing and indoor sightseeing in a given city, using persisted Open-Meteo data. The brief is in `TASK.md`, kept locally and not committed.
 
 ## Conventions
 

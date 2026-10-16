@@ -1,18 +1,14 @@
 # Technical specification
 
-Everything needed to write an implementation plan for this service. It collects what was decided, the data
-behind the decisions, and what is still open. Short decision log: [DECISIONS.md](../DECISIONS.md). Contracts:
+The design of the service: what was decided and the data behind the decisions. Short decision log: [DECISIONS.md](../DECISIONS.md). Contracts:
 [schema.graphql](../contracts/graphql/schema.graphql) and [prisma/schema.prisma](../prisma/schema.prisma).
 
-Status words used below:
-
-- **Decided**: confirmed by the project owner.
-- **Proposal**: suggested during design, not yet confirmed. Decide in the implementation plan.
-- **Verify**: a fact that was not confirmed against a primary source.
+**Decided** marks what was confirmed by the project owner. The architecture and how each part was built are in
+the [implementation plan](implementation-plan.md).
 
 ## 1. Purpose and constraints
 
-The brief is [TASK.md](../TASK.md): a Node.js + GraphQL backend that ranks how good upcoming days are for skiing,
+The brief: a Node.js + GraphQL backend that ranks how good upcoming days are for skiing,
 surfing, outdoor sightseeing and indoor sightseeing in a given place, using Open-Meteo data that is persisted
 rather than fetched on every request. No front end.
 
@@ -20,8 +16,8 @@ What is evaluated, in order: how the work was done (reasoning, assumptions, cuts
 README. A focused submission that reasons well beats an exhaustive one. Where a product manager would normally be
 asked, the question and the assumption taken are written down in DECISIONS.md.
 
-Deliverables still to produce: the service, README (what, how to run, assumptions, Open-Meteo attribution), and
-the AI session trail in `ai-sessions/`.
+Deliverables: the service, the [README](../README.md) (what, how to run, assumptions, Open-Meteo attribution), and
+the AI session trail in [ai-sessions/](../ai-sessions/).
 
 Repository conventions are in [AGENTS.md](../AGENTS.md): English everywhere, Conventional Commits, commit to
 `main`, minimal code comments, and no assumptions recorded without the owner's confirmation.
@@ -68,8 +64,9 @@ Per activity the result is one of:
 | `ActivityDataUnavailable` | no data at all; `cause` is `TEMPORARILY_UNAVAILABLE` or `RATE_LIMITED` |
 
 A day is either `ScoredDay` (`score`, `categoryIndex`, `category`, all non-null) or `UnscoredDay` (`reason` is
-`NO_SEA` or `NO_SNOW`). Nullable fields are avoided on purpose so that invalid combinations such as a null score
+`NO_SEA`, `NO_SNOW` or `NO_DATA` for a day the stored data does not cover). Nullable fields are avoided on purpose so that invalid combinations such as a null score
 with a category cannot be expressed. A failed activity does not fail the others.
+`ScoredLocation.elevation` is nullable: there is no elevation when the first weather request for a point fails.
 
 `freshness` has an entry per data kind the activity used (`WEATHER`, plus `WAVES` for surfing), each with
 `updatedAt` (the time data was actually fetched) and `stale` (a refresh was due but failed, so older data was used).
@@ -124,9 +121,9 @@ Behaviours observed while researching:
 - Hourly forecast data starts at 00:00 of the current day in the requested time zone.
 - The response contains the grid point actually used (`latitude`, `longitude`), `elevation`, `timezone` and
   `utc_offset_seconds`.
-- Time can be requested as unix timestamps with `timeformat=unixtime` (Verify in the implementation).
+- Time can be requested as unix timestamps with `timeformat=unixtime` (verified on 2026-10-13).
 
-### Requests the service makes (proposal)
+### Requests the service makes
 
 Forecast, always 8 days from today, regardless of the requested range:
 
@@ -151,7 +148,7 @@ data. Using `timezone=auto` instead could disagree near zone borders.
 
 ## 5. Data model and refresh
 
-The schema is [prisma/schema.prisma](../prisma/schema.prisma) (draft, not yet validated with `prisma validate`).
+The schema is [prisma/schema.prisma](../prisma/schema.prisma).
 
 Decided:
 
@@ -167,7 +164,7 @@ Decided:
 - An inland location still gets a marine snapshot with `hasSea = false` and no hour rows, so the Marine API is not
   called again on every request.
 - Place search results are stored too (tables `Place`, `PlaceSearch`, `PlaceSearchHit`), so repeated searches
-  do not hit the geocoder. The cache lifetime is not decided (geocoding data rarely changes).
+  do not hit the geocoder. They are kept for 30 days.
 - Metadata columns: `createdAt` and `updatedAt` on every table except the two hour tables; `parserVersion` on
   the two snapshot tables (to tell which mapping logic wrote a row).
 
@@ -182,7 +179,7 @@ Refresh rules (decided):
 Data is fetched on demand: a request that needs data older than its interval triggers a fetch. There is no
 background job.
 
-### Request flow (proposal built from the decisions)
+### Request flow
 
 1. Validate input shape. Normalize coordinates (round to 2 decimals).
 2. Determine the time zone offline and validate the dates.
@@ -213,8 +210,8 @@ background job.
 | Waves unavailable | only surfing is affected |
 | Weather unavailable | every activity is affected, because all of them need weather |
 
-Requests to Open-Meteo are retried once. The timeout and retry settings are environment variables (names and
-default values are a proposal for the plan; a timeout of about 10 seconds was suggested).
+Requests to Open-Meteo are retried once. The timeout and retry settings are environment variables
+(`OPEN_METEO_TIMEOUT_MS`, default 10 seconds, and `OPEN_METEO_RETRIES`, default 1).
 
 ## 7. Refresh and staleness measurements
 
@@ -301,6 +298,8 @@ The rain multiplier (3 mm) and the snow depth multiplier (0.3 m) are our additio
 paper only states that most skiers avoid rain, and it has no snow depth criterion. The snow depth multiplier was
 added after validation (section 9).
 
+![Skiing utility curves: the paper's curves against the piecewise linear ones in code](img/skiing-curves.png)
+
 ### 8.3 Surfing
 
 No academic index exists; thresholds come from surf forecasting practice (meteoblue, Surf-Forecast, Rapture
@@ -320,6 +319,10 @@ Camps). General or intermediate surfer; no skill parameter in the request.
 Known limit: wind direction (offshore versus onshore) is the main factor for real surf quality but cannot be
 used, because the API does not know the orientation of the coast.
 
+![Surfing utility curves](img/surfing-curves.png)
+
+![Surfing score for wave height and period at three wind speeds](img/surfing-combination.png)
+
 ### 8.4 Outdoor sightseeing
 
 Holiday Climate Index: Urban (HCI:Urban), Scott, Rutty, Amelung and Tang, 2016, Atmosphere 7(6):80. The rating
@@ -328,6 +331,8 @@ same authors (Rutty et al., 2020, Atmosphere 11(4):412), which replaced effectiv
 
 `HCI = 4 * TC + 2 * A + 3 * P + W`, then `score = clamp(HCI / 100)`. Each rating is 0 to 10, precipitation and
 wind can be negative.
+
+![HCI:Urban rating tables](img/outdoor-ratings.png)
 
 Thermal comfort rating, from the Canadian humidex of `T = tMax` (C) and `RH = rhMean` (%):
 
@@ -345,6 +350,8 @@ Thermal comfort rating, from the Canadian humidex of `T = tMax` (C) and `RH = rh
 | 20 to 22.99 | 9 | 39 and above | 0 |
 | 23 to 25.99 | 10 | | |
 
+![Thermal comfort rating over temperature and humidity](img/humidex-rating.png)
+
 Cloud cover `A` (mean %): 0 to 8; 1 to 10.99 to 9; 11 to 20.99 to 10; 21 to 30.99 to 9; 31 to 40.99 to 8;
 41 to 50.99 to 7; 51 to 60.99 to 6; 61 to 70.99 to 5; 71 to 80.99 to 4; 81 to 90.99 to 3; 91 to 99.99 to 2;
 100 to 1.
@@ -359,6 +366,8 @@ Two caps are our additions, applied after the index (both added after validation
 
 - if `precip >= 6` then `score = min(score, 0.5)`;
 - if `windMax >= 60` or `precip >= 25` then `score = min(score, 0.2)`.
+
+![Outdoor caps](img/outdoor-caps.png)
 
 Why humidex and not effective temperature: Scott 2016 used effective temperature but does not print a formula
 (Mieczkowski's TCI reads it from an ASHRAE chart), so it cannot be reproduced exactly. Rutty 2020 moved
@@ -388,12 +397,15 @@ The same 8 classes apply to every activity (HCI classes, first two renamed):
 | 7 | EXCELLENT | 0.80 to 0.89 |
 | 8 | IDEAL | 0.90 to 1.00 |
 
-### 8.7 Activity abstraction (decided in principle, details proposal)
+![Score categories and the indoor mapping](img/categories-and-indoor.png)
 
-Each activity sits behind one interface so a new activity is a new class plus a registration, with no change to
-the others. Suggested members: an identifier, the data sources it requires (this drives which sources are
-fetched and the rule that a failure affects only dependent activities), a rule for when a day is unscored, and
-the score function over daily features.
+### 8.7 Activity abstraction (decided)
+
+Each activity is one `ActivityScorer`: an identifier, the data sources it requires (this drives which sources are
+fetched and the rule that a failure affects only dependent activities), the rules for when a day is unscored, and
+the score over daily features. The four activities are declared from small classes (curves, conditions,
+combiners), so a new activity is a new declaration with no change to the others. Details are in the
+[implementation plan](implementation-plan.md#33-key-interfaces), section 3.3.
 
 ## 9. Validation of the scoring
 
@@ -444,7 +456,7 @@ Limitations:
   caps rest on a single documented event (Storm Eunice); Typhoon Saola is already low without them.
 - The Splugen slope closure on 2023-01-01 was dropped as a test case because the source did not give that date.
 - Surfing without wind direction and skiing in the off-season (snow present at high grid cells, so not null)
-  were not fixed. Scoring refinement was deliberately postponed to the end of the work.
+  were not fixed.
 
 ## 10. Stack and tooling (decided unless marked)
 
@@ -460,10 +472,10 @@ Limitations:
 | Containers | a Dockerfile per runnable thing and one docker compose for local run |
 | Tests | unit tests for everything, e2e tests with the NestJS testing tools and a mocked Open-Meteo |
 
-Versions found in the npm registry on 2026-10-12 (Verify before pinning):
+Exact versions are pinned in [package.json](../package.json). Notes from choosing them:
 
 - `@nestjs/graphql` 14.x and `@nestjs/apollo` 14.x require NestJS 12 and `graphql` 16.11 or 17;
-  `@nestjs/apollo` also needs `@apollo/server` 5. Mercurius is the other driver. The driver is not chosen.
+  `@nestjs/apollo` also needs `@apollo/server` 5. The driver is Apollo Server 5 on Express.
 - `@prisma/client` 7.10.0 is the stable line. The `prisma` CLI `latest` tag pointed to an 8.0 release candidate,
   so pin the CLI to 7.x.
 - Prisma 7: the generator is `prisma-client` with a required `output`, the datasource block has no `url` (it
@@ -473,25 +485,26 @@ Versions found in the npm registry on 2026-10-12 (Verify before pinning):
 - `createMany` is enough for inserting the 192 hour rows of a snapshot; upsert is only needed for `Location`
   and `Place`.
 
-### Module layout (proposal)
+### Module layout
 
 | Module | Responsibility |
 |---|---|
 | search | geocoding client, place repository and cache, `searchLocations` resolver |
 | weather | forecast and marine clients, snapshot repository, refresh with single-flight, freshness policy |
 | scoring | daily feature derivation, activity interface and four implementations, categories (pure, no database) |
+| location | the `Location` row of a rounded coordinate pair and its elevation |
 | activity scores | orchestration: validation, data access, scoring, mapping to the contract |
 | health | service health |
 | config | environment variables parsed and validated with zod |
 
 The search and weather modules must not depend on each other.
 
-### Environment variables (proposal)
+### Environment variables
 
-Database URL, Open-Meteo base URLs, optional Open-Meteo API key, request timeout, retry count (default 1),
-weather refresh hours (6), waves refresh hours (24), maximum stale hours (48), place search cache lifetime.
+Names and defaults are listed in [implementation-plan.md](implementation-plan.md#36-environment-variables-p5) and
+[.env.example](../.env.example).
 
-### Observability (proposal)
+### Observability
 
 Traces for incoming HTTP and GraphQL requests and outgoing Open-Meteo calls; counters for snapshot reuse,
 refreshes, refresh failures, stale responses, requests that joined a fetch in flight, Open-Meteo attempts (with a
@@ -500,12 +513,12 @@ the trace id when tracing is on. The SDK starts only when `OTEL_ENABLED` is true
 before the application. Collector and Grafana start only with the compose profile `observability`, so the default
 `docker compose up` runs the application and Postgres.
 
-### Testing (decided in principle)
+### Testing (decided)
 
 - Unit: derived features, each activity scorer, categories, date validation, freshness policy, mapping.
 - Scoring fixtures: the events in section 9 give real daily feature values with expected ordering.
-- e2e: NestJS testing module with Open-Meteo replaced by a mock, never calling the real API. How Postgres is
-  provided to the e2e tests (a compose service or a throwaway container) is not decided.
+- e2e: NestJS testing module with Open-Meteo replaced by a mock, never calling the real API. Postgres for the
+  integration and e2e tests comes from Testcontainers.
 
 ## 11. Out of scope and cut
 
@@ -517,21 +530,20 @@ before the application. Collector and Grafana start only with the compose profil
 - Cross-instance locking of refreshes.
 - Wind direction for surfing, skill levels for surfing, resort-level ski data.
 
-## 12. Open items for the implementation plan
+## 12. Items closed during implementation
 
-| Item | Note |
+| Item | Outcome |
 |---|---|
-| Time zone for day grouping | pass the offline time zone to Open-Meteo so validation and grouping agree; `ScoredLocation.timezone` is then that value |
-| Offline time zone library | not chosen (for example `tz-lookup`) |
-| Place search cache lifetime | not decided |
-| Names and defaults of environment variables | proposal above |
-| GraphQL driver (Apollo or Mercurius) | not decided |
-| How e2e tests get Postgres | not decided |
-| `parserVersion` | needs a documented meaning (which number is which mapping) |
-| `prisma validate` and first migration | the schema has not been run through Prisma yet |
-| Optional Open-Meteo API key | for the paid plan, header or query parameter per their documentation |
-| Scoring refinement | postponed to the end; see limitations in section 9 |
-| Assumptions to check with the team | load, regional scope, coordinates-only ranking, 48 hour limit |
+| Time zone for day grouping | the offline time zone is passed to Open-Meteo, so validation and grouping agree; `ScoredLocation.timezone` is that value |
+| Offline time zone library | `@photostructure/tz-lookup` |
+| Place search cache lifetime | 30 days |
+| Names and defaults of environment variables | see the implementation plan, section 3.6 |
+| GraphQL driver | Apollo Server 5 on Express |
+| How e2e tests get Postgres | Testcontainers |
+| `parserVersion` | a constant per source, bumped when the mapping from the response to columns changes |
+| `prisma validate` and first migration | done in T01 |
+| Optional Open-Meteo API key | `OPEN_METEO_API_KEY`, sent as the `apikey` query parameter |
+| Assumptions to check with the team | listed in [DECISIONS.md](../DECISIONS.md#assumptions-to-check-with-the-team) |
 
 ## 13. Sources
 

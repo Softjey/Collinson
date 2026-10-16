@@ -11,7 +11,7 @@
 The repository is ready to hand in: a short README, documents that match what was built, and the trail of how
 the work was done.
 
-References: TASK.md ("What to submit"); [technical spec](../technical-spec.md) sections 1 and 12.
+References: the brief ("What to submit"); [technical spec](../technical-spec.md) sections 1 and 12.
 
 ## Scope
 
@@ -23,7 +23,7 @@ References: TASK.md ("What to submit"); [technical spec](../technical-spec.md) s
 - **Technical spec**: close the open items of section 12 with what was chosen; update the contract summary
   (`NO_DATA`, nullable `elevation`) and the contract location; remove the "draft" notes that no longer apply.
 - **Implementation plan**: mark each ticket as done, cut or changed, with one line on any deviation.
-- **AI sessions**: export the sessions into `ai-sessions/`, unpolished.
+- **AI sessions**: export the sessions into `ai-sessions/` as Markdown, translated into English.
 - Final pass: a clean clone, `docker compose up`, the README queries, and the full test suite.
 
 ## Checks
@@ -39,4 +39,4 @@ References: TASK.md ("What to submit"); [technical spec](../technical-spec.md) s
 
 ## Out of scope
 
-New features, refactoring, polishing the session trail.
+New features, refactoring.

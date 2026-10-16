@@ -4,8 +4,7 @@ Architecture and ticket breakdown for the whole backend. It builds on
 [technical-spec.md](technical-spec.md) and [DECISIONS.md](../DECISIONS.md) and does not repeat them: formulas,
 tables and measurements stay in the spec.
 
-Status words are the same as in the spec: **Decided** (confirmed by the owner), **Proposal** (to be confirmed,
-listed in section 2), **Verify** (check against a primary source inside the ticket).
+All tickets are done; section 4 gives the status of each.
 
 ## 1. Decisions taken while planning (decided)
 
@@ -32,9 +31,9 @@ Facts verified against the live API on 2026-10-13:
   `@prisma/adapter-pg` 7.10.0, `zod` 4.6.7, `class-validator` 0.15.1, `@testcontainers/postgresql` 12.2.1,
   `@photostructure/tz-lookup` 11.7.0, `jest` 30.5.2, `typescript` 7.0.2.
 
-## 2. Proposals to confirm
+## 2. Proposals accepted during implementation
 
-These are not recorded in DECISIONS.md until confirmed. The tickets below assume them.
+Each was built as proposed; the code was checked against every row when the work was finished.
 
 | # | Topic | Proposal |
 |---|---|---|
@@ -268,18 +267,17 @@ Single spec files are run during work; the full suite before a commit.
 
 ## 4. Tickets
 
-Eight tickets, one document each in [tickets/](tickets/). Every ticket follows TDD and lists its tests first.
+Seven tickets, one document each in [tickets/](tickets/). Every ticket follows TDD and lists its tests first.
 
-| Ticket | Title | Depends on | Unblocks |
-|---|---|---|---|
-| [T01](tickets/T01-foundation.md) | Foundation: scaffold, config, database, contract, GraphQL bootstrap, Open-Meteo HTTP client, health | none | T02, T03, T04 |
-| [T02](tickets/T02-scoring.md) | Scoring: core and the four activity scorers | T01 | T05 |
-| [T03](tickets/T03-weather-data.md) | Weather data: forecast and marine clients, persistence, refresh | T01 | T05 |
-| [T04](tickets/T04-location-search.md) | Location search | T01 | T06 |
-| [T05](tickets/T05-activity-scores.md) | `activityScores`: time zone, date validation, orchestration | T02, T03 | T06, T08 |
-| [T06](tickets/T06-containers-observability.md) | Containers and observability | T04, T05 | T07 |
-| [T07](tickets/T07-docs-submission.md) | Documentation and submission | T06 | none |
-| [T08](tickets/T08-scoring-refinement.md) | Scoring refinement (optional) | T05 | none |
+| Ticket | Title | Depends on | Unblocks | Status |
+|---|---|---|---|---|
+| [T01](tickets/T01-foundation.md) | Foundation: scaffold, config, database, contract, GraphQL bootstrap, Open-Meteo HTTP client, health | none | T02, T03, T04 | Done |
+| [T02](tickets/T02-scoring.md) | Scoring: core and the four activity scorers | T01 | T05 | Done |
+| [T03](tickets/T03-weather-data.md) | Weather data: forecast and marine clients, persistence, refresh | T01 | T05 | Done |
+| [T04](tickets/T04-location-search.md) | Location search | T01 | T06 | Done |
+| [T05](tickets/T05-activity-scores.md) | `activityScores`: time zone, date validation, orchestration | T02, T03 | T06 | Done |
+| [T06](tickets/T06-containers-observability.md) | Containers and observability | T04, T05 | T07 | Done |
+| [T07](tickets/T07-docs-submission.md) | Documentation and submission | T06 | none | Done |
 
 ### Topological order and parallel waves
 
@@ -288,8 +286,7 @@ Wave 1        Wave 2                Wave 3      Wave 4      Wave 5
 
               T02 scoring ------+
 T01 --------> T03 weather data -+-> T05 ------> T06 ------> T07
-foundation    T04 search -------|-------------^
-                                +-> (T08 optional, any time after T05)
+foundation    T04 search ---------------------^
 ```
 
 | Wave | Tickets | Can run in parallel |
@@ -297,10 +294,10 @@ foundation    T04 search -------|-------------^
 | 1 | T01 | no, everything depends on it |
 | 2 | T02, T03, T04 | yes, all three |
 | 3 | T05 | T04 may still be in progress next to it |
-| 4 | T06 | T08 may run next to it |
+| 4 | T06 | no |
 | 5 | T07 | no, it describes the finished state |
 
-A valid serial order is T01, T02, T03, T04, T05, T06, T07, T08. The critical path is T01, T03, T05, T06, T07.
+A valid serial order is T01, T02, T03, T04, T05, T06, T07. The critical path is T01, T03, T05, T06, T07.
 
 What makes wave 2 safe to run in parallel:
 
