@@ -4,17 +4,21 @@ import request from 'supertest';
 import { AppModule } from '../../src/app.module.js';
 import { APP_CONFIG } from '../../src/shared/config/config.module.js';
 import { parseEnv } from '../../src/shared/config/env.schema.js';
+import { Metrics } from '../../src/shared/observability/metrics.js';
 import { OpenMeteoService } from '../../src/shared/open-meteo/open-meteo.service.js';
 import { testDatabaseUrl } from './database.js';
 import { FakeOpenMeteo } from './fake-open-meteo.js';
+import { InMemoryMetrics } from './in-memory-metrics.js';
 
 export interface TestApp {
   app: INestApplication;
   openMeteo: FakeOpenMeteo;
+  inMemoryMetrics: InMemoryMetrics;
 }
 
 export async function createTestApp(options: { databaseUrl?: string } = {}): Promise<TestApp> {
   const openMeteo = new FakeOpenMeteo();
+  const inMemoryMetrics = new InMemoryMetrics();
   const config = parseEnv({
     ...process.env,
     DATABASE_URL: options.databaseUrl ?? testDatabaseUrl(),
@@ -26,11 +30,13 @@ export async function createTestApp(options: { databaseUrl?: string } = {}): Pro
     .useValue(config)
     .overrideProvider(OpenMeteoService)
     .useValue(openMeteo)
+    .overrideProvider(Metrics)
+    .useValue(inMemoryMetrics.metrics)
     .compile();
 
   const app = moduleRef.createNestApplication();
   await app.init();
-  return { app, openMeteo };
+  return { app, openMeteo, inMemoryMetrics };
 }
 
 /** Registers the Jest hooks of an e2e suite: one app for the whole suite, the scripted Open-Meteo reset per test. */

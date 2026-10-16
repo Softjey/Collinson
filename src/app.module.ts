@@ -12,6 +12,7 @@ import { ConfigModule } from './shared/config/config.module.js';
 import { DatabaseModule } from './shared/database/database.module.js';
 import { formatGraphQLError } from './shared/graphql/error-formatter.js';
 import { ScalarsModule } from './shared/graphql/scalars/scalars.module.js';
+import { ObservabilityModule } from './shared/observability/observability.module.js';
 import { OpenMeteoModule } from './shared/open-meteo/open-meteo.module.js';
 import { WeatherModule } from './weather/weather.module.js';
 
@@ -21,6 +22,7 @@ const CONTRACT_PATH = fileURLToPath(new URL('../contracts/graphql/schema.graphql
   imports: [
     ConfigModule,
     DatabaseModule,
+    ObservabilityModule,
     OpenMeteoModule,
     ScalarsModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({
