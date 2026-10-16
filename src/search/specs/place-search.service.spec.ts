@@ -1,4 +1,5 @@
 import { jest } from '@jest/globals';
+import { InMemoryMetrics } from '../../../test/support/in-memory-metrics.js';
 import type { AppConfig } from '../../shared/config/env.schema.js';
 import type { Clock } from '../../shared/clock.js';
 import type { GeocodingClient } from '../geocoding.client.js';
@@ -30,6 +31,7 @@ function createService(options: { stored?: StoredPlaceSearch | null; geocoderErr
     .mockResolvedValue((options.stored ?? null) as never);
   const saveSearch = jest.fn<PlaceRepository['saveSearch']>().mockResolvedValue();
   const clock: Clock = { now: () => NOW };
+  const inMemoryMetrics = new InMemoryMetrics();
   const service = new PlaceSearchService(
     { search } as unknown as GeocodingClient,
     { findSearch, saveSearch } as unknown as PlaceRepository,
@@ -37,8 +39,9 @@ function createService(options: { stored?: StoredPlaceSearch | null; geocoderErr
     clock,
     new PlaceSearchKeyMapper(),
     { toStoredSearch: (row: unknown) => row } as unknown as PlaceSearchMapper,
+    inMemoryMetrics.metrics,
   );
-  return { service, search, findSearch, saveSearch };
+  return { service, search, findSearch, saveSearch, inMemoryMetrics };
 }
 
 describe('PlaceSearchService', () => {
@@ -90,6 +93,47 @@ describe('PlaceSearchService', () => {
 
     await expect(service.search(input)).rejects.toMatchObject({
       extensions: { code: 'SERVICE_UNAVAILABLE' },
+    });
+  });
+
+  describe('metrics', () => {
+    it('counts a search answered from the stored result as a hit', async () => {
+      const { service, inMemoryMetrics } = createService({ stored: stored(1) });
+
+      await service.search(input);
+
+      expect(await inMemoryMetrics.counterValue('placeSearch', { outcome: 'hit' })).toBe(1);
+      expect(await inMemoryMetrics.counterValue('placeSearch', { outcome: 'refreshed' })).toBe(0);
+    });
+
+    it('counts a search answered by the geocoder as refreshed', async () => {
+      const { service, inMemoryMetrics } = createService({ stored: stored(31) });
+
+      await service.search(input);
+
+      expect(await inMemoryMetrics.counterValue('placeSearch', { outcome: 'refreshed' })).toBe(1);
+      expect(await inMemoryMetrics.counterValue('placeSearch', { outcome: 'hit' })).toBe(0);
+    });
+
+    it('counts a stored result served after a geocoder failure as a stale fallback', async () => {
+      const { service, inMemoryMetrics } = createService({
+        stored: stored(90),
+        geocoderError: new Error('down'),
+      });
+
+      await service.search(input);
+
+      expect(await inMemoryMetrics.counterValue('placeSearch', { outcome: 'stale_fallback' })).toBe(1);
+      expect(await inMemoryMetrics.counterValue('placeSearch', { outcome: 'refreshed' })).toBe(0);
+    });
+
+    it('counts a geocoder failure with nothing stored as failed', async () => {
+      const { service, inMemoryMetrics } = createService({ geocoderError: new Error('down') });
+
+      await service.search(input).catch(() => undefined);
+
+      expect(await inMemoryMetrics.counterValue('placeSearch', { outcome: 'failed' })).toBe(1);
+      expect(await inMemoryMetrics.counterValue('placeSearch', { outcome: 'stale_fallback' })).toBe(0);
     });
   });
 });

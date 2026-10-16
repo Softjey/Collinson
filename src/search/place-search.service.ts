@@ -3,6 +3,7 @@ import { GraphQLError } from 'graphql';
 import { Clock } from '../shared/clock.js';
 import { APP_CONFIG } from '../shared/config/config.module.js';
 import type { AppConfig } from '../shared/config/env.schema.js';
+import { Metrics } from '../shared/observability/metrics.js';
 import { GeocodingClient } from './geocoding.client.js';
 import type { Place } from './entities/place.js';
 import { PlaceRepository } from './repositories/place.repository.js';
@@ -24,6 +25,7 @@ export class PlaceSearchService {
     private readonly clock: Clock,
     private readonly searchKeyMapper: PlaceSearchKeyMapper,
     private readonly placeSearchMapper: PlaceSearchMapper,
+    private readonly metrics: Metrics,
   ) {}
 
   async search(input: SearchLocationsArgs): Promise<Place[]> {
@@ -32,18 +34,22 @@ export class PlaceSearchService {
     const stored = row && this.placeSearchMapper.toStoredSearch(row);
 
     if (stored && this.isFresh(stored)) {
+      this.metrics.increment('placeSearch', { outcome: 'hit' });
       return stored.places;
     }
 
     try {
       const found = await this.geocodingClient.search(input);
       await this.placeRepository.saveSearch(key, found, this.clock.now());
+      this.metrics.increment('placeSearch', { outcome: 'refreshed' });
       return found;
     } catch (error) {
       this.logger.warn(`Place search failed: ${error instanceof Error ? error.message : String(error)}`);
       if (stored) {
+        this.metrics.increment('placeSearch', { outcome: 'stale_fallback' });
         return stored.places;
       }
+      this.metrics.increment('placeSearch', { outcome: 'failed' });
       throw new GraphQLError('Place search is temporarily unavailable', {
         extensions: { code: 'SERVICE_UNAVAILABLE' },
       });
